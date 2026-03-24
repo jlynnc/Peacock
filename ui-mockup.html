@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Peacock UI Mockup</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; background: #f0ebe3; display: flex; align-items: center; justify-content: center; height: 100vh; }
+
+  .app {
+    width: 960px; height: 640px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 240px;
+    background: #fafafa;
+    border-right: 1px solid #f0f0f0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sidebar-header {
+    padding: 16px 16px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, #0d9488, #14b8a6);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 16px; font-weight: 700;
+  }
+  .app-name {
+    font-size: 16px; font-weight: 700; color: #1a1a1a;
+    letter-spacing: -0.3px;
+  }
+
+  .sidebar-tabs {
+    display: flex;
+    padding: 0 12px;
+    gap: 2px;
+    margin-bottom: 8px;
+  }
+  .tab {
+    flex: 1;
+    padding: 7px 0;
+    text-align: center;
+    font-size: 13px;
+    color: #999;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.15s;
+    border: none; background: none;
+  }
+  .tab:hover { color: #666; background: #f0f0f0; }
+  .tab.active {
+    color: #0d9488;
+    font-weight: 600;
+    background: rgba(13,148,136,0.06);
+  }
+
+  .sidebar-search {
+    padding: 0 12px 8px;
+  }
+  .search-input {
+    width: 100%;
+    padding: 7px 12px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #333;
+    background: #fff;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-input:focus { border-color: #0d9488; }
+  .search-input::placeholder { color: #bbb; }
+
+  .device-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 8px;
+  }
+
+  .device-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 2px;
+  }
+  .device-item:hover { background: #f5f5f5; }
+  .device-item.active { background: rgba(13,148,136,0.06); }
+
+  .device-avatar {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .avatar-blue { background: #e8f0fe; }
+  .avatar-purple { background: #f3e8ff; }
+  .avatar-orange { background: #fff3e0; }
+  .avatar-green { background: #e8f5e9; }
+
+  .online-dot {
+    position: absolute;
+    bottom: -1px; right: -1px;
+    width: 10px; height: 10px;
+    background: #22c55e;
+    border: 2px solid #fafafa;
+    border-radius: 50%;
+  }
+  .device-item.active .online-dot { border-color: rgba(13,148,136,0.06); }
+
+  .device-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .device-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: #1a1a1a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .device-meta {
+    font-size: 11px;
+    color: #aaa;
+    margin-top: 1px;
+  }
+
+  .unread-badge {
+    min-width: 18px; height: 18px;
+    background: #0d9488;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 5px;
+  }
+
+  .sidebar-footer {
+    padding: 10px 12px;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .self-avatar {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #0d9488, #14b8a6);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600;
+  }
+  .self-name { font-size: 12px; color: #666; flex: 1; }
+  .settings-btn {
+    width: 28px; height: 28px;
+    border: none; background: none;
+    color: #bbb; cursor: pointer;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    font-size: 16px;
+  }
+  .settings-btn:hover { background: #f0f0f0; color: #666; }
+
+  /* ── Main Area ── */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+  }
+
+  /* Chat Header */
+  .chat-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .chat-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .chat-device-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+  .chat-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: #ecfdf5;
+    color: #059669;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .chat-status-dot {
+    width: 6px; height: 6px;
+    background: #22c55e;
+    border-radius: 50%;
+  }
+  .chat-header-right {
+    display: flex;
+    gap: 4px;
+  }
+  .header-btn {
+    width: 32px; height: 32px;
+    border: none; background: none;
+    color: #bbb; cursor: pointer;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    font-size: 16px;
+  }
+  .header-btn:hover { background: #f5f5f5; color: #666; }
+
+  /* Messages */
+  .message-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: #fafbfc;
+  }
+
+  .date-divider {
+    text-align: center;
+    font-size: 11px;
+    color: #bbb;
+    padding: 8px 0;
+    position: relative;
+  }
+  .date-divider::before, .date-divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: calc(50% - 50px);
+    height: 1px;
+    background: #eee;
+  }
+  .date-divider::before { left: 0; }
+  .date-divider::after { right: 0; }
+
+  .msg-row {
+    display: flex;
+    width: 100%;
+  }
+  .msg-row.sent { justify-content: flex-end; }
+  .msg-row.received { justify-content: flex-start; }
+
+  .msg-avatar {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 14px;
+    margin-top: 2px;
+  }
+  .msg-avatar-them { background: #e8f0fe; margin-right: 8px; }
+  .msg-avatar-me { background: linear-gradient(135deg, #0d9488, #14b8a6); color: #fff; font-size: 11px; font-weight: 600; margin-left: 8px; order: 2; }
+
+  .msg-bubble {
+    max-width: 55%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.55;
+    color: #1a1a1a;
+    position: relative;
+  }
+  .msg-bubble.received {
+    background: #fff;
+    border: 1px solid #f0f0f0;
+    border-top-left-radius: 4px;
+  }
+  .msg-bubble.sent {
+    background: linear-gradient(135deg, #e6fffa, #ccfbf1);
+    border: 1px solid #b2f5ea;
+    border-top-right-radius: 4px;
+    color: #134e4a;
+  }
+
+  .msg-name {
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 3px;
+  }
+  .msg-name.them { color: #6366f1; }
+
+  .msg-time {
+    font-size: 10px;
+    color: #bbb;
+    margin-top: 4px;
+    text-align: right;
+  }
+  .msg-bubble.sent .msg-time { color: #5eaaa0; }
+
+  /* File card in chat */
+  .file-card {
+    background: #fff;
+    border: 1px solid #f0f0f0;
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 300px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .file-card:hover { border-color: #0d9488; }
+  .file-icon {
+    width: 38px; height: 38px;
+    border-radius: 8px;
+    background: #f0fdfa;
+    color: #0d9488;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .file-info { flex: 1; min-width: 0; }
+  .file-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: #0d9488;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .file-meta { font-size: 11px; color: #aaa; margin-top: 1px; }
+  .file-download {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    border: none;
+    background: #f0fdfa;
+    color: #0d9488;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .file-download:hover { background: #ccfbf1; }
+
+  /* Progress bar */
+  .progress-wrap {
+    max-width: 300px;
+    margin-top: 4px;
+  }
+  .progress-bar {
+    height: 3px;
+    background: #eee;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #0d9488, #14b8a6);
+    border-radius: 2px;
+    transition: width 0.3s;
+  }
+  .progress-text {
+    font-size: 10px;
+    color: #aaa;
+    margin-top: 2px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* Chat Input */
+  .chat-input-area {
+    padding: 12px 20px 16px;
+    border-top: 1px solid #f0f0f0;
+    background: #fff;
+  }
+  .input-wrapper {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    background: #f7f8f9;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 8px 12px;
+    transition: border-color 0.15s;
+  }
+  .input-wrapper:focus-within { border-color: #0d9488; }
+
+  .input-tools {
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .tool-btn {
+    width: 30px; height: 30px;
+    border: none; background: none;
+    color: #bbb; cursor: pointer;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    font-size: 16px;
+  }
+  .tool-btn:hover { color: #0d9488; background: rgba(13,148,136,0.06); }
+
+  .chat-textarea {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: none;
+    font-size: 13px;
+    color: #333;
+    resize: none;
+    min-height: 20px;
+    max-height: 80px;
+    line-height: 1.4;
+    font-family: inherit;
+  }
+  .chat-textarea::placeholder { color: #ccc; }
+
+  .send-btn {
+    width: 32px; height: 32px;
+    border: none;
+    background: #0d9488;
+    color: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .send-btn:hover { background: #0f766e; }
+
+  /* ── Snippet View (right panel alternative) ── */
+
+  /* Label for the mockup */
+  .mockup-label {
+    position: fixed;
+    top: 12px; right: 16px;
+    background: #0d9488;
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    z-index: 100;
+  }
+</style>
+</head>
+<body>
+
+<div class="mockup-label">Peacock UI Mockup — Bandcamp Style</div>
+
+<div class="app">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">P</div>
+      <span class="app-name">Peacock</span>
+    </div>
+
+    <div class="sidebar-tabs">
+      <button class="tab active">设备</button>
+      <button class="tab">片段</button>
+    </div>
+
+    <div class="sidebar-search">
+      <input class="search-input" placeholder="搜索设备..." />
+    </div>
+
+    <div class="device-list">
+      <div class="device-item active">
+        <div class="device-avatar avatar-blue">
+          💻
+          <div class="online-dot"></div>
+        </div>
+        <div class="device-info">
+          <div class="device-name">MacBook Pro</div>
+          <div class="device-meta">macOS · 192.168.31.100</div>
+        </div>
+        <div class="unread-badge">3</div>
+      </div>
+
+      <div class="device-item">
+        <div class="device-avatar avatar-purple">
+          📱
+          <div class="online-dot"></div>
+        </div>
+        <div class="device-info">
+          <div class="device-name">iPhone 15 Pro</div>
+          <div class="device-meta">iOS · 192.168.31.55</div>
+        </div>
+      </div>
+
+      <div class="device-item">
+        <div class="device-avatar avatar-orange">
+          🖥️
+          <div class="online-dot"></div>
+        </div>
+        <div class="device-info">
+          <div class="device-name">Office Desktop</div>
+          <div class="device-meta">Windows · 192.168.31.200</div>
+        </div>
+      </div>
+
+      <div class="device-item">
+        <div class="device-avatar avatar-green">
+          🐧
+          <div class="online-dot"></div>
+        </div>
+        <div class="device-info">
+          <div class="device-name">Dev Server</div>
+          <div class="device-meta">Linux · 192.168.31.10</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="self-avatar">J</div>
+      <span class="self-name">JNUC-13900k</span>
+      <button class="settings-btn">⚙</button>
+    </div>
+  </div>
+
+  <!-- Main Chat Area -->
+  <div class="main">
+    <div class="chat-header">
+      <div class="chat-header-left">
+        <span class="chat-device-name">MacBook Pro</span>
+        <span class="chat-status">
+          <span class="chat-status-dot"></span>
+          在线
+        </span>
+      </div>
+      <div class="chat-header-right">
+        <button class="header-btn" title="搜索">🔍</button>
+        <button class="header-btn" title="更多">⋯</button>
+      </div>
+    </div>
+
+    <div class="message-list">
+      <div class="date-divider">今天</div>
+
+      <!-- Received message -->
+      <div class="msg-row received">
+        <div class="msg-avatar msg-avatar-them">💻</div>
+        <div>
+          <div class="msg-bubble received">
+            <div class="msg-name them">MacBook Pro</div>
+            嘿，帮我把那个设计稿传过来
+            <div class="msg-time">10:42</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sent message -->
+      <div class="msg-row sent">
+        <div class="msg-bubble sent">
+          好的，马上发
+          <div class="msg-time">10:43</div>
+        </div>
+        <div class="msg-avatar msg-avatar-me">我</div>
+      </div>
+
+      <!-- File card -->
+      <div class="msg-row sent">
+        <div>
+          <div class="file-card">
+            <div class="file-icon">📄</div>
+            <div class="file-info">
+              <div class="file-name">Design_System_v2.pdf</div>
+              <div class="file-meta">4.2 MB · PDF</div>
+            </div>
+            <button class="file-download">↓</button>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-bar"><div class="progress-fill" style="width: 100%"></div></div>
+            <div class="progress-text"><span>已完成</span><span>4.2 MB</span></div>
+          </div>
+        </div>
+        <div class="msg-avatar msg-avatar-me">我</div>
+      </div>
+
+      <!-- Received message -->
+      <div class="msg-row received">
+        <div class="msg-avatar msg-avatar-them">💻</div>
+        <div class="msg-bubble received">
+          <div class="msg-name them">MacBook Pro</div>
+          收到了，谢谢！这个版本包含图标集吗？
+          <div class="msg-time">10:45</div>
+        </div>
+      </div>
+
+      <!-- Sent message -->
+      <div class="msg-row sent">
+        <div class="msg-bubble sent">
+          包含的，Lucide 图标全套都在里面，你看看还缺什么
+          <div class="msg-time">10:46</div>
+        </div>
+        <div class="msg-avatar msg-avatar-me">我</div>
+      </div>
+
+      <!-- Receiving file -->
+      <div class="msg-row received">
+        <div class="msg-avatar msg-avatar-them">💻</div>
+        <div>
+          <div class="file-card">
+            <div class="file-icon">🖼️</div>
+            <div class="file-info">
+              <div class="file-name">screenshot_dashboard.png</div>
+              <div class="file-meta">2.8 MB · 传输中...</div>
+            </div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-bar"><div class="progress-fill" style="width: 65%"></div></div>
+            <div class="progress-text"><span>65% · 12.3 MB/s</span><span>1.8 / 2.8 MB</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="chat-input-area">
+      <div class="input-wrapper">
+        <div class="input-tools">
+          <button class="tool-btn" title="发送文件">📎</button>
+          <button class="tool-btn" title="发送文件夹">📂</button>
+        </div>
+        <textarea class="chat-textarea" rows="1" placeholder="输入消息..."></textarea>
+        <button class="send-btn">➤</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

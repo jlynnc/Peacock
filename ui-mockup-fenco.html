@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Peacock UI Mockup — Fenco Style</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; background: #c8c4bf; display: flex; align-items: center; justify-content: center; height: 100vh; }
+
+  .app {
+    width: 980px; height: 660px;
+    background: #eae6e1;
+    border-radius: 20px;
+    box-shadow: 0 16px 56px rgba(0,0,0,0.10);
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* ── Dark Icon Nav ── */
+  .icon-nav {
+    width: 56px;
+    background: #1a1a1a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 0;
+    gap: 2px;
+    border-radius: 20px 0 0 20px;
+  }
+  .nav-logo {
+    width: 36px; height: 36px;
+    background: #fff;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: #1a1a1a;
+    font-size: 15px; font-weight: 800;
+    margin-bottom: 20px;
+  }
+  .nav-btn {
+    width: 38px; height: 38px;
+    border: none; background: none;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: #666;
+    font-size: 17px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .nav-btn:hover { color: #aaa; }
+  .nav-btn.active { background: #333; color: #fff; }
+  .nav-spacer { flex: 1; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 220px;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0 12px;
+  }
+  .sidebar-greeting {
+    padding: 0 16px 4px;
+    font-size: 12px;
+    color: #999;
+  }
+  .sidebar-hello {
+    padding: 0 16px 16px;
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a1a;
+  }
+  .sidebar-hello span { color: #6366f1; }
+
+  .section-title {
+    font-size: 11px; font-weight: 600; color: #aaa;
+    text-transform: uppercase; letter-spacing: 0.6px;
+    padding: 12px 16px 6px;
+  }
+
+  .device-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 8px;
+  }
+  .device-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 1px;
+  }
+  .device-item:hover { background: rgba(0,0,0,0.03); }
+  .device-item.active {
+    background: #fff;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+  }
+  .device-avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .av-1 { background: #ede9fe; }
+  .av-2 { background: #dbeafe; }
+  .av-3 { background: #fce7f3; }
+  .av-4 { background: #d1fae5; }
+  .online-dot {
+    position: absolute; bottom: 0; right: 0;
+    width: 9px; height: 9px;
+    background: #22c55e;
+    border: 2px solid #eae6e1;
+    border-radius: 50%;
+  }
+  .device-item.active .online-dot { border-color: #fff; }
+  .device-info { flex: 1; min-width: 0; }
+  .device-name { font-size: 13px; font-weight: 500; color: #1a1a1a; }
+  .device-meta { font-size: 10px; color: #bbb; margin-top: 1px; }
+  .unread {
+    min-width: 18px; height: 18px;
+    background: #6366f1; color: #fff;
+    font-size: 10px; font-weight: 600;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 5px;
+  }
+
+  /* ── Main ── */
+  .main {
+    flex: 1;
+    background: #fff;
+    border-radius: 16px;
+    margin: 8px 8px 8px 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .chat-header {
+    padding: 14px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid #f3f1ef;
+  }
+  .chat-header-left { display: flex; align-items: center; gap: 10px; }
+  .chat-name { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+  .chat-badge {
+    padding: 2px 10px;
+    background: #f0fdf4; color: #16a34a;
+    border-radius: 12px; font-size: 11px; font-weight: 500;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .badge-dot { width: 5px; height: 5px; background: #22c55e; border-radius: 50%; }
+  .chat-meta { font-size: 11px; color: #bbb; }
+  .chat-header-right { display: flex; gap: 4px; }
+  .h-btn {
+    width: 34px; height: 34px;
+    border: 1px solid #eee; background: #fff;
+    color: #999; cursor: pointer;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    transition: all 0.15s;
+  }
+  .h-btn:hover { border-color: #ccc; color: #666; }
+
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    background: #fafaf8;
+  }
+
+  .date-sep { text-align: center; font-size: 11px; color: #ccc; padding: 4px 0; }
+
+  .msg { display: flex; width: 100%; gap: 8px; }
+  .msg.sent { justify-content: flex-end; }
+
+  .msg-av {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-size: 13px; margin-top: 2px;
+  }
+  .msg-av-them { background: #ede9fe; }
+  .msg-av-me { background: #6366f1; color: #fff; font-size: 10px; font-weight: 700; order: 2; }
+
+  .msg-body { max-width: 55%; }
+  .msg-sender { font-size: 11px; font-weight: 600; color: #6366f1; margin-bottom: 3px; }
+
+  .bubble {
+    padding: 10px 14px;
+    border-radius: 16px;
+    font-size: 13px; line-height: 1.55;
+  }
+  .bubble.received {
+    background: #fff;
+    color: #1a1a1a;
+    border: 1px solid #f0eeeb;
+    border-top-left-radius: 4px;
+  }
+  .bubble.sent {
+    background: #6366f1;
+    color: #fff;
+    border-top-right-radius: 4px;
+  }
+  .msg-time { font-size: 10px; color: #ccc; margin-top: 3px; }
+  .msg.sent .msg-time { text-align: right; }
+
+  /* File card */
+  .file-card {
+    background: #fff;
+    border: 1px solid #f0eeeb;
+    border-radius: 14px;
+    padding: 10px 12px;
+    display: flex; align-items: center; gap: 10px;
+    max-width: 300px;
+    transition: border-color 0.15s;
+    cursor: pointer;
+  }
+  .file-card:hover { border-color: #6366f1; }
+  .file-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: #ede9fe;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .file-info { flex: 1; min-width: 0; }
+  .file-name { font-size: 12px; font-weight: 500; color: #6366f1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-meta { font-size: 11px; color: #bbb; margin-top: 1px; }
+  .file-dl {
+    width: 28px; height: 28px;
+    border-radius: 50%; border: none;
+    background: #6366f1; color: #fff;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700;
+    transition: background 0.15s;
+  }
+  .file-dl:hover { background: #4f46e5; }
+
+  .prog-area { max-width: 300px; margin-top: 4px; }
+  .prog-bar { height: 3px; background: #eee; border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: linear-gradient(90deg, #6366f1, #818cf8); border-radius: 2px; }
+  .prog-text { font-size: 10px; color: #bbb; margin-top: 2px; display: flex; justify-content: space-between; }
+
+  /* Input */
+  .chat-input-area { padding: 12px 16px 16px; background: #fff; }
+  .input-wrap {
+    display: flex; align-items: flex-end; gap: 8px;
+    background: #f5f3f0;
+    border-radius: 14px;
+    padding: 8px 12px;
+    transition: box-shadow 0.15s;
+  }
+  .input-wrap:focus-within { box-shadow: 0 0 0 2px rgba(99,102,241,0.2); }
+  .tool-btn {
+    width: 30px; height: 30px;
+    border: none; background: none;
+    color: #bbb; cursor: pointer;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    transition: all 0.15s;
+  }
+  .tool-btn:hover { color: #6366f1; background: rgba(99,102,241,0.06); }
+  .chat-textarea {
+    flex: 1; border: none; outline: none; background: none;
+    font-size: 13px; color: #1a1a1a;
+    resize: none; min-height: 20px; max-height: 80px;
+    line-height: 1.4; font-family: inherit;
+  }
+  .chat-textarea::placeholder { color: #ccc; }
+  .send-btn {
+    width: 34px; height: 34px; border: none;
+    background: #6366f1; color: #fff;
+    border-radius: 50%; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .send-btn:hover { background: #4f46e5; }
+
+  .mockup-label {
+    position: fixed; top: 12px; right: 16px;
+    background: #1a1a1a; color: #fff;
+    padding: 4px 14px; border-radius: 20px;
+    font-size: 11px; font-weight: 500; z-index: 100;
+  }
+</style>
+</head>
+<body>
+
+<div class="mockup-label">Peacock — Fenco Dashboard Style</div>
+
+<div class="app">
+  <!-- Dark Icon Nav -->
+  <div class="icon-nav">
+    <div class="nav-logo">P</div>
+    <button class="nav-btn active">💬</button>
+    <button class="nav-btn">🕐</button>
+    <button class="nav-btn">👤</button>
+    <button class="nav-btn">📋</button>
+    <div class="nav-spacer"></div>
+    <button class="nav-btn">❓</button>
+    <button class="nav-btn">⚙</button>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-greeting">Peacock LAN Transfer</div>
+    <div class="sidebar-hello">Hello, <span>Julian</span></div>
+
+    <div class="section-title">在线设备</div>
+    <div class="device-list">
+      <div class="device-item active">
+        <div class="device-avatar av-1">💻<div class="online-dot"></div></div>
+        <div class="device-info">
+          <div class="device-name">MacBook Pro</div>
+          <div class="device-meta">macOS · 31.100</div>
+        </div>
+        <div class="unread">3</div>
+      </div>
+      <div class="device-item">
+        <div class="device-avatar av-2">📱<div class="online-dot"></div></div>
+        <div class="device-info">
+          <div class="device-name">iPhone 15 Pro</div>
+          <div class="device-meta">iOS · 31.55</div>
+        </div>
+      </div>
+      <div class="device-item">
+        <div class="device-avatar av-3">🖥️<div class="online-dot"></div></div>
+        <div class="device-info">
+          <div class="device-name">Office Desktop</div>
+          <div class="device-meta">Windows · 31.200</div>
+        </div>
+      </div>
+      <div class="device-item">
+        <div class="device-avatar av-4">🐧<div class="online-dot"></div></div>
+        <div class="device-info">
+          <div class="device-name">Dev Server</div>
+          <div class="device-meta">Linux · 31.10</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="chat-header">
+      <div class="chat-header-left">
+        <span class="chat-name">MacBook Pro</span>
+        <span class="chat-badge"><span class="badge-dot"></span>在线</span>
+        <span class="chat-meta">macOS · 192.168.31.100</span>
+      </div>
+      <div class="chat-header-right">
+        <button class="h-btn">🔔</button>
+        <button class="h-btn">🔍</button>
+      </div>
+    </div>
+
+    <div class="messages">
+      <div class="date-sep">今天</div>
+
+      <div class="msg received">
+        <div class="msg-av msg-av-them">💻</div>
+        <div class="msg-body">
+          <div class="msg-sender">MacBook Pro</div>
+          <div class="bubble received">嘿，帮我把那个设计稿传过来</div>
+          <div class="msg-time">10:42</div>
+        </div>
+      </div>
+
+      <div class="msg sent">
+        <div class="msg-body">
+          <div class="bubble sent">好的，马上发</div>
+          <div class="msg-time">10:43</div>
+        </div>
+        <div class="msg-av msg-av-me">我</div>
+      </div>
+
+      <div class="msg sent">
+        <div class="msg-body">
+          <div class="file-card">
+            <div class="file-icon">📄</div>
+            <div class="file-info">
+              <div class="file-name">Design_System_v2.pdf</div>
+              <div class="file-meta">4.2 MB · PDF</div>
+            </div>
+            <button class="file-dl">↓</button>
+          </div>
+          <div class="prog-area">
+            <div class="prog-bar"><div class="prog-fill" style="width:100%"></div></div>
+            <div class="prog-text"><span>已完成</span><span>4.2 MB</span></div>
+          </div>
+        </div>
+        <div class="msg-av msg-av-me">我</div>
+      </div>
+
+      <div class="msg received">
+        <div class="msg-av msg-av-them">💻</div>
+        <div class="msg-body">
+          <div class="msg-sender">MacBook Pro</div>
+          <div class="bubble received">收到了，谢谢！这个版本包含图标集吗？</div>
+          <div class="msg-time">10:45</div>
+        </div>
+      </div>
+
+      <div class="msg sent">
+        <div class="msg-body">
+          <div class="bubble sent">包含的，Lucide 图标全套都在里面，你看看还缺什么</div>
+          <div class="msg-time">10:46</div>
+        </div>
+        <div class="msg-av msg-av-me">我</div>
+      </div>
+
+      <div class="msg received">
+        <div class="msg-av msg-av-them">💻</div>
+        <div class="msg-body">
+          <div class="file-card">
+            <div class="file-icon">🖼️</div>
+            <div class="file-info">
+              <div class="file-name">screenshot_dashboard.png</div>
+              <div class="file-meta">2.8 MB · 传输中...</div>
+            </div>
+          </div>
+          <div class="prog-area">
+            <div class="prog-bar"><div class="prog-fill" style="width:65%"></div></div>
+            <div class="prog-text"><span>65% · 12.3 MB/s</span><span>1.8 / 2.8 MB</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-input-area">
+      <div class="input-wrap">
+        <button class="tool-btn">📎</button>
+        <button class="tool-btn">📂</button>
+        <textarea class="chat-textarea" rows="1" placeholder="输入消息..."></textarea>
+        <button class="send-btn">➤</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

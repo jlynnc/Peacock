@@ -3,6 +3,7 @@ import { ref, watch } from "vue";
 import { useSnippetStore } from "@/stores/snippet";
 import { useDeviceStore } from "@/stores/device";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
+import { ClipboardList } from "lucide-vue-next";
 
 const store = useSnippetStore();
 const deviceStore = useDeviceStore();
@@ -181,7 +182,7 @@ function formatDateTime(ts: number) {
 
   <!-- Empty state -->
   <div class="empty-editor" v-else>
-    <div class="empty-icon">📋</div>
+    <ClipboardList class="empty-icon" :size="48" />
     <p>选择或新建一个片段</p>
   </div>
 </template>
@@ -192,6 +193,7 @@ function formatDateTime(ts: number) {
   flex-direction: column;
   height: 100%;
   position: relative;
+  background: #fff;
 }
 
 .toolbar {
@@ -199,7 +201,8 @@ function formatDateTime(ts: number) {
   justify-content: space-between;
   align-items: center;
   padding: 8px 16px;
-  border-bottom: 1px solid var(--color-border);
+  background: #fafafa;
+  border-bottom: 1px solid #f0f0f0;
   flex-shrink: 0;
 }
 
@@ -210,16 +213,16 @@ function formatDateTime(ts: number) {
 
 .info-text {
   font-size: 11px;
-  color: var(--color-text-secondary);
+  color: #aaa;
 }
 .save-status {
   font-size: 11px;
 }
 .save-status.saving {
-  color: var(--color-text-secondary);
+  color: #aaa;
 }
 .save-status.saved {
-  color: var(--color-primary);
+  color: #0d9488;
 }
 
 .toolbar-right {
@@ -230,31 +233,36 @@ function formatDateTime(ts: number) {
 
 .btn {
   padding: 4px 10px;
-  border-radius: 4px;
-  border: 1px solid var(--color-border);
-  background: #fff;
-  color: var(--color-text);
+  border-radius: 6px;
+  border: none;
+  background: #f5f5f5;
+  color: #888;
   font-size: 12px;
   cursor: pointer;
   transition: all 0.15s;
 }
 .btn:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+  background: #eee;
+  color: #666;
 }
 .btn-copied {
-  background: var(--color-primary);
+  background: #0d9488;
   color: #fff;
-  border-color: var(--color-primary);
+}
+.btn-copied:hover {
+  background: #0d9488;
+  color: #fff;
 }
 .btn-danger:hover {
-  border-color: #ff4d4f;
-  color: #ff4d4f;
+  color: #ef4444;
 }
 .btn-danger-solid {
-  background: #ff4d4f;
+  background: #ef4444;
   color: #fff;
-  border-color: #ff4d4f;
+}
+.btn-danger-solid:hover {
+  background: #dc2626;
+  color: #fff;
 }
 
 .share-wrap {
@@ -267,33 +275,34 @@ function formatDateTime(ts: number) {
   right: 0;
   margin-top: 4px;
   background: #fff;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   min-width: 180px;
   z-index: 20;
   padding: 4px;
 }
 .share-device {
   padding: 6px 10px;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   display: flex;
   justify-content: space-between;
   font-size: 13px;
+  transition: background 0.15s;
 }
 .share-device:hover {
-  background: rgba(0, 0, 0, 0.04);
+  background: #f5f5f5;
 }
 .share-ip {
   font-size: 11px;
-  color: var(--color-text-secondary);
+  color: #aaa;
 }
 .share-empty {
   padding: 10px;
   text-align: center;
   font-size: 12px;
-  color: var(--color-text-secondary);
+  color: #aaa;
 }
 
 .title-area {
@@ -304,11 +313,11 @@ function formatDateTime(ts: number) {
 .title-input {
   width: 100%;
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 700;
   border: none;
   outline: none;
   background: transparent;
-  color: var(--color-text);
+  color: #1a1a1a;
   padding: 0;
 }
 .title-input::placeholder {
@@ -330,7 +339,7 @@ function formatDateTime(ts: number) {
   border: none;
   outline: none;
   background: transparent;
-  color: var(--color-text);
+  color: #1a1a1a;
   resize: none;
   padding: 0;
 }
@@ -341,7 +350,7 @@ function formatDateTime(ts: number) {
 .note-area {
   padding: 0 16px 12px;
   flex-shrink: 0;
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid #f0f0f0;
   padding-top: 8px;
 }
 
@@ -351,7 +360,7 @@ function formatDateTime(ts: number) {
   border: none;
   outline: none;
   background: transparent;
-  color: var(--color-text-secondary);
+  color: #888;
   padding: 0;
 }
 .note-input::placeholder {
@@ -364,20 +373,22 @@ function formatDateTime(ts: number) {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: var(--color-text-secondary);
+  color: #ccc;
+  background: #fff;
 }
 .empty-icon {
-  font-size: 48px;
+  color: #ddd;
   margin-bottom: 12px;
 }
 .empty-editor p {
   font-size: 14px;
+  color: #ccc;
 }
 
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.3);
   z-index: 50;
 }
 .confirm-dialog {
@@ -386,14 +397,15 @@ function formatDateTime(ts: number) {
   left: 50%;
   transform: translate(-50%, -50%);
   background: #fff;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 20px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   z-index: 51;
   min-width: 260px;
 }
 .confirm-dialog p {
   font-size: 14px;
+  color: #1a1a1a;
   margin-bottom: 14px;
 }
 .confirm-actions {

@@ -4,6 +4,7 @@ import { useSettingsStore } from "@/stores/settings";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { isTauri } from "@/utils/platform";
+import { X } from "lucide-vue-next";
 
 const emit = defineEmits<{
   close: [];
@@ -55,7 +56,9 @@ function handleOverlayClick(e: MouseEvent) {
     <div class="modal-dialog">
       <div class="modal-header">
         <h3>设置</h3>
-        <button class="close-btn" @click="emit('close')">✕</button>
+        <button class="close-btn" @click="emit('close')">
+          <X :size="18" />
+        </button>
       </div>
       <div class="modal-body">
         <div class="setting-group">
@@ -108,23 +111,46 @@ function handleOverlayClick(e: MouseEvent) {
 </template>
 
 <style scoped>
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -46%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2000;
+  animation: fadeIn 0.2s ease;
 }
 
 .modal-dialog {
-  background: white;
-  border-radius: 12px;
+  background: #fff;
+  border-radius: 14px;
   width: 440px;
   max-height: 80vh;
   overflow-y: auto;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: slideUp 0.25s ease;
 }
 
 .modal-header {
@@ -132,26 +158,31 @@ function handleOverlayClick(e: MouseEvent) {
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .modal-header h3 {
   font-size: 16px;
   font-weight: 600;
+  color: #1a1a1a;
 }
 
 .close-btn {
   border: none;
   background: none;
-  font-size: 16px;
   cursor: pointer;
-  color: var(--color-text-secondary);
-  padding: 4px 8px;
-  border-radius: 4px;
+  color: #bbb;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
 }
 
 .close-btn:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: #f5f5f5;
+  color: #666;
 }
 
 .modal-body {
@@ -170,25 +201,29 @@ function handleOverlayClick(e: MouseEvent) {
 .setting-label {
   font-size: 13px;
   font-weight: 600;
-  color: var(--color-text);
+  color: #1a1a1a;
 }
 
 .setting-input {
   padding: 8px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border: 1px solid #eee;
+  border-radius: 8px;
   font-size: 13px;
   outline: none;
+  background: #f7f8f9;
+  color: #1a1a1a;
   transition: border-color 0.15s;
 }
-
+.setting-input::placeholder {
+  color: #ccc;
+}
 .setting-input:focus {
-  border-color: var(--color-primary);
+  border-color: #0d9488;
 }
 
 .setting-hint {
   font-size: 12px;
-  color: var(--color-text-secondary);
+  color: #aaa;
 }
 
 .dir-picker {
@@ -199,14 +234,14 @@ function handleOverlayClick(e: MouseEvent) {
 .dir-input {
   flex: 1;
   cursor: pointer;
-  background: #fafafa;
 }
 
 .pick-btn {
   padding: 8px 16px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  background: white;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  background: #f7f8f9;
+  color: #666;
   font-size: 13px;
   cursor: pointer;
   flex-shrink: 0;
@@ -214,8 +249,8 @@ function handleOverlayClick(e: MouseEvent) {
 }
 
 .pick-btn:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+  border-color: #0d9488;
+  color: #0d9488;
 }
 
 .setting-row {
@@ -233,11 +268,12 @@ function handleOverlayClick(e: MouseEvent) {
 .toggle-input {
   width: 16px;
   height: 16px;
-  accent-color: var(--color-primary);
+  accent-color: #0d9488;
 }
 
 .toggle-text {
   font-size: 13px;
+  color: #1a1a1a;
 }
 
 .modal-footer {
@@ -245,33 +281,36 @@ function handleOverlayClick(e: MouseEvent) {
   justify-content: flex-end;
   gap: 8px;
   padding: 12px 20px;
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid #f0f0f0;
 }
 
 .btn-cancel {
   padding: 8px 20px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  background: white;
+  border: none;
+  border-radius: 8px;
+  background: #f5f5f5;
+  color: #666;
   font-size: 13px;
   cursor: pointer;
+  transition: background 0.15s;
 }
 
 .btn-cancel:hover {
-  background: #f5f5f5;
+  background: #eee;
 }
 
 .btn-save {
   padding: 8px 20px;
   border: none;
-  border-radius: 6px;
-  background: var(--color-primary);
-  color: white;
+  border-radius: 8px;
+  background: #0d9488;
+  color: #fff;
   font-size: 13px;
   cursor: pointer;
+  transition: background 0.2s;
 }
 
 .btn-save:hover {
-  background: var(--color-primary-hover);
+  background: #0f766e;
 }
 </style>

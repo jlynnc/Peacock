@@ -98,15 +98,19 @@ function formatTime(ts: number) {
 .search-input {
   width: 100%;
   padding: 6px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  font-size: 13px;
-  background: var(--color-bg);
-  color: var(--color-text);
+  border: 1px solid #eee;
+  border-radius: 8px;
+  font-size: 12px;
+  background: #fff;
+  color: #1a1a1a;
   outline: none;
+  transition: border-color 0.15s;
+}
+.search-input::placeholder {
+  color: #ccc;
 }
 .search-input:focus {
-  border-color: var(--color-primary);
+  border-color: #0d9488;
 }
 
 .list-body {
@@ -116,22 +120,23 @@ function formatTime(ts: number) {
 }
 
 .snippet-item {
-  padding: 10px 10px;
-  border-radius: 6px;
+  padding: 10px;
+  border-radius: 8px;
   cursor: pointer;
-  margin-bottom: 1px;
+  margin: 0 4px;
   transition: background 0.15s;
 }
 .snippet-item:hover {
-  background: rgba(0, 0, 0, 0.04);
+  background: #f5f5f5;
 }
 .snippet-item.active {
-  background: rgba(7, 193, 96, 0.1);
+  background: rgba(13, 148, 136, 0.06);
 }
 
 .snippet-title {
   font-size: 13px;
   font-weight: 500;
+  color: #1a1a1a;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -142,44 +147,44 @@ function formatTime(ts: number) {
   font-size: 13px;
   font-weight: 500;
   padding: 2px 4px;
-  border: 1px solid var(--color-primary);
-  border-radius: 3px;
+  border: 1px solid #0d9488;
+  border-radius: 4px;
   outline: none;
   background: #fff;
-  color: var(--color-text);
+  color: #1a1a1a;
 }
 
 .snippet-time {
   font-size: 11px;
-  color: var(--color-text-secondary);
+  color: #aaa;
   margin-top: 2px;
 }
 
 .empty {
   text-align: center;
-  color: var(--color-text-secondary);
+  color: #ccc;
   font-size: 13px;
   padding: 40px 0;
 }
 
 .list-footer {
   padding: 8px 10px;
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid #f0f0f0;
   flex-shrink: 0;
 }
 
 .btn-new {
   width: 100%;
   padding: 7px;
-  background: var(--color-primary);
+  background: #0d9488;
   color: #fff;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 13px;
   cursor: pointer;
   transition: background 0.2s;
 }
 .btn-new:hover {
-  background: var(--color-primary-hover);
+  background: #0f766e;
 }
 </style>

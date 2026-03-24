@@ -8,6 +8,7 @@ import { useChatStore } from "@/stores/chat";
 import { openFileLocation, deleteFile } from "@/utils/ipc";
 import { open } from "@tauri-apps/plugin-dialog";
 import { isTauri } from "@/utils/platform";
+import { Download } from "lucide-vue-next";
 
 const props = defineProps<{
   message: ChatMessage;
@@ -151,11 +152,21 @@ async function handleDelete() {
 <template>
   <div :class="['file-card', message.transfer_status]">
     <div class="file-card-header">
-      <span class="file-icon">{{ fileIcon }}</span>
+      <div class="file-icon-box">
+        <span class="file-icon">{{ fileIcon }}</span>
+      </div>
       <div class="file-info">
         <div class="file-name">{{ message.file_name }}</div>
-        <div class="file-size">{{ formatFileSize(message.file_size || 0) }}</div>
+        <div class="file-meta">{{ formatFileSize(message.file_size || 0) }} · {{ (message.file_name || '').split('.').pop()?.toUpperCase() || '文件' }}</div>
       </div>
+      <button
+        v-if="isCompleted && hasFilePath && !deleted"
+        class="download-btn"
+        title="打开目录"
+        @click="handleOpenLocation"
+      >
+        <Download :size="14" />
+      </button>
     </div>
 
     <!-- Progress bar for active/paused transfers -->
@@ -168,19 +179,20 @@ async function handleDelete() {
         ></div>
       </div>
       <div class="progress-info">
-        <span>{{ statusLabel }}</span>
-        <span>{{ formatFileSize(message.transferred_bytes || 0) }} / {{ formatFileSize(message.file_size || 0) }}</span>
+        <span class="progress-text">{{ statusLabel }}</span>
+        <span class="progress-text">{{ formatFileSize(message.transferred_bytes || 0) }} / {{ formatFileSize(message.file_size || 0) }}</span>
       </div>
     </div>
 
     <!-- Completed: show links -->
     <div v-else-if="isCompleted && !deleted" class="file-completed">
       <span class="completed-label">传输完成</span>
-      <div class="completed-links">
-        <a v-if="hasFilePath" class="link-action" @click="handleOpenLocation">打开目录</a>
-        <span v-if="hasFilePath && message.direction === 'received'" class="link-sep">|</span>
-        <a v-if="hasFilePath && message.direction === 'received'" class="link-action delete" @click="handleDelete">删除文件</a>
-      </div>
+      <span class="completed-sep">·</span>
+      <a v-if="hasFilePath" class="link-action" @click="handleOpenLocation">打开目录</a>
+      <template v-if="hasFilePath && message.direction === 'received'">
+        <span class="completed-sep">·</span>
+        <a class="link-action delete" @click="handleDelete">删除</a>
+      </template>
     </div>
 
     <!-- Deleted state -->
@@ -200,32 +212,36 @@ async function handleDelete() {
 
     <!-- Pending received: accept/reject -->
     <div v-if="isPending" class="file-actions">
-      <button class="btn-file-accept" @click="accept">接收</button>
-      <button class="btn-file-save-as" @click="acceptToDir">另存为...</button>
-      <button class="btn-file-reject" @click="reject">拒绝</button>
+      <button class="btn-accept" @click="accept">接收</button>
+      <button class="btn-save-as" @click="acceptToDir">另存为...</button>
+      <button class="btn-reject" @click="reject">拒绝</button>
     </div>
 
     <!-- Active: pause/cancel -->
     <div v-if="isActive && !isPaused" class="file-actions">
-      <button class="btn-file-action" @click="pause">暂停</button>
-      <button class="btn-file-action cancel" @click="cancel">取消</button>
+      <button class="btn-action" @click="pause">暂停</button>
+      <button class="btn-action btn-cancel" @click="cancel">取消</button>
     </div>
 
     <!-- Paused: resume/cancel -->
     <div v-if="isPaused" class="file-actions">
-      <button class="btn-file-action" @click="resume">继续</button>
-      <button class="btn-file-action cancel" @click="cancel">取消</button>
+      <button class="btn-action" @click="resume">继续</button>
+      <button class="btn-action btn-cancel" @click="cancel">取消</button>
     </div>
   </div>
 </template>
 
 <style scoped>
 .file-card {
-  background: rgba(0, 0, 0, 0.03);
-  border-radius: 8px;
-  padding: 10px 12px;
-  min-width: 240px;
-  max-width: 320px;
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 280px;
+  max-width: 380px;
 }
 
 .file-card-header {
@@ -234,9 +250,20 @@ async function handleDelete() {
   gap: 10px;
 }
 
-.file-icon {
-  font-size: 32px;
+.file-icon-box {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  background: #f0fdfa;
+  color: #0d9488;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+}
+
+.file-icon {
+  font-size: 18px;
 }
 
 .file-info {
@@ -247,32 +274,51 @@ async function handleDelete() {
 .file-name {
   font-size: 13px;
   font-weight: 500;
+  color: #0d9488;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: var(--color-text);
 }
 
-.file-size {
+.file-meta {
   font-size: 11px;
-  color: var(--color-text-secondary);
+  color: #aaa;
   margin-top: 2px;
 }
 
+.download-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: #f0fdfa;
+  color: #0d9488;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.download-btn:hover {
+  background: #ccfbf1;
+}
+
 .file-progress {
-  margin-top: 8px;
+  margin-top: 0;
 }
 
 .progress-bar {
-  height: 4px;
-  background: rgba(0, 0, 0, 0.08);
+  height: 3px;
+  background: #eee;
   border-radius: 2px;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  background: var(--color-primary);
+  background: linear-gradient(90deg, #0d9488, #14b8a6);
   border-radius: 2px;
   transition: width 0.2s;
 }
@@ -284,85 +330,79 @@ async function handleDelete() {
 .progress-info {
   display: flex;
   justify-content: space-between;
-  font-size: 11px;
-  color: var(--color-text-secondary);
   margin-top: 4px;
 }
 
+.progress-text {
+  font-size: 10px;
+  color: #aaa;
+}
+
 .file-completed {
-  margin-top: 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.completed-label {
-  font-size: 12px;
-  color: var(--color-primary);
-}
-
-.completed-links {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
+.completed-label {
+  font-size: 12px;
+  color: #0d9488;
+  font-weight: 500;
+}
+
+.completed-sep {
+  font-size: 11px;
+  color: #ddd;
+}
+
 .link-action {
   font-size: 12px;
-  color: #1a73e8;
+  color: #0d9488;
   cursor: pointer;
   text-decoration: none;
   transition: color 0.15s;
 }
 
 .link-action:hover {
-  color: #1557b0;
   text-decoration: underline;
 }
 
 .link-action.delete {
-  color: #999;
+  color: #888;
 }
 
 .link-action.delete:hover {
-  color: #f44336;
-}
-
-.link-sep {
-  font-size: 11px;
-  color: #ccc;
+  color: #ef4444;
 }
 
 .file-status {
   font-size: 12px;
-  margin-top: 6px;
 }
 
 .file-status.completed {
-  color: var(--color-primary);
+  color: #0d9488;
 }
 
 .file-status.failed {
-  color: #f44336;
+  color: #ef4444;
 }
 
 .file-status.rejected {
-  color: #999;
+  color: #888;
 }
 
 .file-status.pending {
-  color: #ff9800;
+  color: #aaa;
 }
 
 .file-status.deleted {
-  color: #999;
+  color: #888;
   font-style: italic;
 }
 
 .save-hint {
   font-size: 11px;
-  color: var(--color-text-secondary);
-  margin-top: 4px;
+  color: #aaa;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -370,77 +410,74 @@ async function handleDelete() {
 
 .file-actions {
   display: flex;
-  gap: 6px;
-  margin-top: 8px;
+  gap: 8px;
+  margin-top: 2px;
 }
 
-.btn-file-accept {
+.btn-accept {
   flex: 1;
-  padding: 5px 0;
+  padding: 4px 12px;
   border: none;
-  border-radius: 4px;
-  background: var(--color-primary);
-  color: white;
+  border-radius: 6px;
+  background: #0d9488;
+  color: #fff;
   font-size: 12px;
   cursor: pointer;
   transition: background 0.15s;
 }
 
-.btn-file-accept:hover {
-  background: var(--color-primary-hover);
+.btn-accept:hover {
+  background: #0f766e;
 }
 
-.btn-file-save-as {
+.btn-save-as {
   flex: 1;
-  padding: 5px 0;
-  border: 1px solid var(--color-primary);
-  border-radius: 4px;
+  padding: 4px 12px;
+  border: 1px solid #0d9488;
+  border-radius: 6px;
   background: transparent;
-  color: var(--color-primary);
+  color: #0d9488;
   font-size: 12px;
   cursor: pointer;
   transition: all 0.15s;
 }
 
-.btn-file-save-as:hover {
-  background: rgba(76, 175, 80, 0.08);
+.btn-save-as:hover {
+  background: rgba(13, 148, 136, 0.06);
 }
 
-.btn-file-reject {
-  padding: 5px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
+.btn-reject {
+  padding: 4px 12px;
+  border: none;
+  border-radius: 6px;
   background: transparent;
-  color: var(--color-text-secondary);
+  color: #ef4444;
   font-size: 12px;
   cursor: pointer;
   transition: all 0.15s;
 }
 
-.btn-file-reject:hover {
-  border-color: #f44336;
-  color: #f44336;
+.btn-reject:hover {
+  text-decoration: underline;
 }
 
-.btn-file-action {
+.btn-action {
   flex: 1;
-  padding: 5px 0;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
+  padding: 4px 12px;
+  border: none;
+  border-radius: 6px;
   background: transparent;
-  color: var(--color-text-secondary);
+  color: #888;
   font-size: 12px;
   cursor: pointer;
   transition: all 0.15s;
 }
 
-.btn-file-action:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+.btn-action:hover {
+  color: #0d9488;
 }
 
-.btn-file-action.cancel:hover {
-  border-color: #f44336;
-  color: #f44336;
+.btn-action.btn-cancel:hover {
+  color: #ef4444;
 }
 </style>

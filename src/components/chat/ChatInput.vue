@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { open } from "@tauri-apps/plugin-dialog";
+import { Paperclip, FolderOpen, Send } from "lucide-vue-next";
 import { sendFile, sendFolder } from "@/utils/ipc";
 import { useDeviceStore } from "@/stores/device";
 import { useChatStore } from "@/stores/chat";
@@ -106,29 +107,26 @@ function handleDragOver(e: DragEvent) {
 
 <template>
   <div class="chat-input-area" @drop="handleDrop" @dragover="handleDragOver">
-    <div class="input-toolbar">
-      <button class="toolbar-btn" title="发送文件" @click="handleFilePick" :disabled="isSendingFile">
-        📎
+    <div class="input-wrapper">
+      <button class="tool-btn" title="发送文件" @click="handleFilePick" :disabled="isSendingFile">
+        <Paperclip :size="18" />
       </button>
-      <button class="toolbar-btn" title="发送文件夹" @click="handleFolderPick" :disabled="isSendingFile">
-        📂
+      <button class="tool-btn" title="发送文件夹" @click="handleFolderPick" :disabled="isSendingFile">
+        <FolderOpen :size="18" />
       </button>
-    </div>
-    <div class="input-body">
       <textarea
         ref="textareaRef"
         v-model="inputText"
         class="input-textarea"
-        placeholder="输入消息，Enter 发送，Shift+Enter 换行，可拖拽文件到窗口"
+        rows="1"
+        placeholder="输入消息，Enter 发送，Shift+Enter 换行"
         @keydown="handleKeydown"
       ></textarea>
-    </div>
-    <div class="input-footer">
       <button
         :class="['send-btn', { active: inputText.trim().length > 0 }]"
         @click="handleSend"
       >
-        发送
+        <Send :size="16" />
       </button>
     </div>
   </div>
@@ -136,84 +134,89 @@ function handleDragOver(e: DragEvent) {
 
 <style scoped>
 .chat-input-area {
-  border-top: 1px solid var(--color-border);
-  background: #ffffff;
-  display: flex;
-  flex-direction: column;
+  padding: 8px 16px 12px;
   flex-shrink: 0;
 }
 
-.input-toolbar {
+.input-wrapper {
   display: flex;
-  gap: 4px;
-  padding: 6px 12px 0;
+  align-items: center;
+  gap: 8px;
+  background: #f7f8f9;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 8px 12px;
+  transition: border-color 0.15s;
 }
 
-.toolbar-btn {
+.input-wrapper:focus-within {
+  border-color: #0d9488;
+}
+
+.tool-btn {
+  width: 30px;
+  height: 30px;
   border: none;
   background: none;
-  font-size: 18px;
-  padding: 4px 6px;
+  color: #bbb;
+  border-radius: 6px;
   cursor: pointer;
-  border-radius: 4px;
-  opacity: 0.7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   transition: all 0.15s;
 }
 
-.toolbar-btn:hover {
-  opacity: 1;
-  background: rgba(0, 0, 0, 0.05);
+.tool-btn:hover {
+  color: #0d9488;
+  background: rgba(13, 148, 136, 0.06);
 }
 
-.toolbar-btn:disabled {
+.tool-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
 }
 
-.input-body {
-  padding: 4px 12px;
-}
-
 .input-textarea {
-  width: 100%;
-  height: 80px;
+  flex: 1;
   border: none;
   outline: none;
-  resize: none;
-  font-size: 14px;
-  font-family: inherit;
-  line-height: 1.5;
-  color: var(--color-text);
   background: transparent;
+  font-size: 13px;
+  font-family: inherit;
+  color: #333;
+  resize: none;
+  min-height: 20px;
+  max-height: 80px;
+  line-height: 1.5;
 }
 
 .input-textarea::placeholder {
-  color: #bbb;
-}
-
-.input-footer {
-  display: flex;
-  justify-content: flex-end;
-  padding: 0 12px 8px;
+  color: #ccc;
 }
 
 .send-btn {
-  padding: 6px 24px;
+  width: 32px;
+  height: 32px;
   border: none;
-  border-radius: 4px;
-  font-size: 13px;
-  cursor: pointer;
   background: #e0e0e0;
   color: #999;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   transition: all 0.15s;
 }
 
 .send-btn.active {
-  background: var(--color-primary);
-  color: white;
+  background: #0d9488;
+  color: #fff;
 }
 
 .send-btn.active:hover {
-  background: var(--color-primary-hover);
+  background: #0f766e;
 }
 </style>

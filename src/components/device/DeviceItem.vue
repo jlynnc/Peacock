@@ -11,7 +11,7 @@ defineProps<{
 </script>
 
 <template>
-  <div :class="['device-item', { selected }]">
+  <div :class="['device-item', { active: selected }]">
     <DeviceAvatar :device-id="device.device_id" :platform="device.platform" />
     <div class="device-info">
       <div class="device-name">{{ device.device_name }}</div>
@@ -19,10 +19,7 @@ defineProps<{
         {{ formatPlatform(device.platform) }} · {{ device.ip_addr }}
       </div>
     </div>
-    <div class="device-status">
-      <span v-if="unread > 0" class="unread-badge">{{ unread > 99 ? '99+' : unread }}</span>
-      <span class="online-dot"></span>
-    </div>
+    <span v-if="unread > 0" class="unread-badge">{{ unread > 99 ? '99+' : unread }}</span>
   </div>
 </template>
 
@@ -30,18 +27,20 @@ defineProps<{
 .device-item {
   display: flex;
   align-items: center;
-  padding: 10px 16px;
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 2px;
   cursor: pointer;
-  transition: background 0.15s;
-  gap: 12px;
+  gap: 10px;
+  transition: all 0.15s;
 }
 
 .device-item:hover {
-  background: rgba(0, 0, 0, 0.04);
+  background: #f5f5f5;
 }
 
-.device-item.selected {
-  background: rgba(0, 0, 0, 0.08);
+.device-item.active {
+  background: rgba(13, 148, 136, 0.06);
 }
 
 .device-info {
@@ -50,47 +49,35 @@ defineProps<{
 }
 
 .device-name {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
+  color: #1a1a1a;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .device-meta {
-  font-size: 12px;
-  color: var(--color-text-secondary);
-  margin-top: 2px;
+  font-size: 11px;
+  color: #aaa;
+  margin-top: 1px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.device-status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.online-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--color-online);
-}
-
 .unread-badge {
-  background: #f44336;
-  color: white;
-  font-size: 11px;
   min-width: 18px;
   height: 18px;
+  background: #0d9488;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
   border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0 5px;
-  font-weight: 500;
+  flex-shrink: 0;
 }
 </style>

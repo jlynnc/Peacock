@@ -2,10 +2,14 @@
 import { computed } from "vue";
 import type { DevicePlatform } from "@/types/device";
 
-const props = defineProps<{
-  deviceId: string;
-  platform: DevicePlatform;
-}>();
+const props = withDefaults(
+  defineProps<{
+    deviceId: string;
+    platform: DevicePlatform;
+    online?: boolean;
+  }>(),
+  { online: true }
+);
 
 const platformIcon = computed(() => {
   const icons: Record<string, string> = {
@@ -19,28 +23,31 @@ const platformIcon = computed(() => {
   return icons[props.platform] || "💻";
 });
 
-// Generate a consistent color from device_id
 const bgColor = computed(() => {
-  let hash = 0;
-  for (let i = 0; i < props.deviceId.length; i++) {
-    hash = props.deviceId.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const hue = Math.abs(hash % 360);
-  return `hsl(${hue}, 55%, 65%)`;
+  const colors: Record<string, string> = {
+    windows: "#e8f0fe",
+    macos: "#e8f0fe",
+    ios: "#f3e8ff",
+    android: "#f3e8ff",
+    linux: "#e0f2f1",
+  };
+  return colors[props.platform] || "#f5f5f5";
 });
 </script>
 
 <template>
   <div class="device-avatar" :style="{ background: bgColor }">
     <span class="avatar-icon">{{ platformIcon }}</span>
+    <span v-if="online" class="online-dot"></span>
   </div>
 </template>
 
 <style scoped>
 .device-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -48,6 +55,17 @@ const bgColor = computed(() => {
 }
 
 .avatar-icon {
-  font-size: 20px;
+  font-size: 18px;
+}
+
+.online-dot {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 10px;
+  height: 10px;
+  background: #22c55e;
+  border: 2px solid #fafafa;
+  border-radius: 50%;
 }
 </style>

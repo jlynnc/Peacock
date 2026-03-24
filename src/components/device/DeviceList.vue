@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useDeviceStore } from "@/stores/device";
 import { useChatStore } from "@/stores/chat";
+import { Wifi } from "lucide-vue-next";
 import DeviceItem from "./DeviceItem.vue";
 
 const deviceStore = useDeviceStore();
@@ -15,18 +16,22 @@ function handleSelect(deviceId: string) {
 <template>
   <div class="device-list">
     <div v-if="deviceStore.onlineDevices.length === 0" class="no-devices">
-      <div class="scanning-icon">📡</div>
-      <p>正在搜索设备...</p>
+      <div class="scanning-icon">
+        <Wifi :size="24" color="#bbb" />
+      </div>
+      <p class="scanning-text">正在搜索设备...</p>
       <p class="hint">请确保其他设备在同一局域网</p>
     </div>
-    <DeviceItem
-      v-for="device in deviceStore.onlineDevices"
-      :key="device.device_id"
-      :device="device"
-      :selected="deviceStore.selectedDeviceId === device.device_id"
-      :unread="chatStore.getUnreadCount(device.device_id)"
-      @click="handleSelect(device.device_id)"
-    />
+    <div v-else class="device-list-container">
+      <DeviceItem
+        v-for="device in deviceStore.onlineDevices"
+        :key="device.device_id"
+        :device="device"
+        :selected="deviceStore.selectedDeviceId === device.device_id"
+        :unread="chatStore.getUnreadCount(device.device_id)"
+        @click="handleSelect(device.device_id)"
+      />
+    </div>
   </div>
 </template>
 
@@ -35,19 +40,21 @@ function handleSelect(deviceId: string) {
   padding: 4px 0;
 }
 
+.device-list-container {
+  padding: 0 8px;
+}
+
 .no-devices {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 40px 20px;
-  color: var(--color-text-secondary);
   text-align: center;
   gap: 8px;
 }
 
 .scanning-icon {
-  font-size: 32px;
   animation: pulse 2s ease-in-out infinite;
 }
 
@@ -57,16 +64,19 @@ function handleSelect(deviceId: string) {
     opacity: 1;
   }
   50% {
-    opacity: 0.4;
+    opacity: 0.3;
   }
 }
 
-.no-devices p {
+.scanning-text {
   font-size: 13px;
+  color: #999;
+  margin: 0;
 }
 
 .hint {
-  font-size: 12px !important;
-  opacity: 0.6;
+  font-size: 12px;
+  color: #ccc;
+  margin: 0;
 }
 </style>
