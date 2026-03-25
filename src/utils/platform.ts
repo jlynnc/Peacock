@@ -18,3 +18,14 @@ export function getCurrentPlatform(): string {
   if (ua.includes("iphone") || ua.includes("ipad")) return "ios";
   return "unknown";
 }
+
+/**
+ * Detect if running on a mobile device (iOS, Android, or small screen in web)
+ */
+export function isMobile(): boolean {
+  if (!isTauri()) {
+    return window.innerWidth <= 768;
+  }
+  const platform = getCurrentPlatform();
+  return platform === "ios" || platform === "android";
+}
