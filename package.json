@@ -16,6 +16,7 @@
     "@tauri-apps/plugin-dialog": "^2.6.0",
     "@tauri-apps/plugin-fs": "^2.4.5",
     "@tauri-apps/plugin-notification": "^2.3.3",
+    "@tauri-apps/plugin-os": "^2.3.2",
     "@vueuse/core": "^14.2.1",
     "lucide-vue-next": "^1.0.0",
     "pinia": "^3.0.4",

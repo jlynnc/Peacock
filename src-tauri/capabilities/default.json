@@ -10,6 +10,7 @@
     "dialog:default",
     "notification:default",
     "fs:default",
-    "clipboard-manager:default"
+    "clipboard-manager:default",
+    "os:default"
   ]
 }

@@ -3,7 +3,7 @@ import { createPinia } from "pinia";
 import { createRouter, createWebHistory } from "vue-router";
 import App from "./App.vue";
 import "./styles/global.css";
-import { isMobile } from "./utils/platform";
+import { detectIsMobile } from "./utils/platform";
 
 const mobileRoutes = [
   {
@@ -48,12 +48,19 @@ const desktopRoutes = [
   },
 ];
 
-const router = createRouter({
-  history: createWebHistory(),
-  routes: isMobile() ? mobileRoutes : desktopRoutes,
-});
+async function bootstrap() {
+  const mobile = await detectIsMobile();
+  console.log("[Peacock] Platform detected, isMobile:", mobile);
 
-const app = createApp(App);
-app.use(createPinia());
-app.use(router);
-app.mount("#app");
+  const router = createRouter({
+    history: createWebHistory(),
+    routes: mobile ? mobileRoutes : desktopRoutes,
+  });
+
+  const app = createApp(App);
+  app.use(createPinia());
+  app.use(router);
+  app.mount("#app");
+}
+
+bootstrap();
