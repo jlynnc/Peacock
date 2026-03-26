@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
+import { useI18n } from "vue-i18n";
 import { open } from "@tauri-apps/plugin-dialog";
-import { Paperclip, FolderOpen, Send } from "lucide-vue-next";
+import { Paperclip, FolderOpen } from "lucide-vue-next";
 import { sendFile, sendFolder } from "@/utils/ipc";
 import { useDeviceStore } from "@/stores/device";
 import { useChatStore } from "@/stores/chat";
 import { isTauri } from "@/utils/platform";
+
+const { t } = useI18n();
 
 const emit = defineEmits<{
   send: [text: string];
@@ -13,9 +16,22 @@ const emit = defineEmits<{
 
 const deviceStore = useDeviceStore();
 const chatStore = useChatStore();
-const inputText = ref("");
 const textareaRef = ref<HTMLTextAreaElement | null>(null);
 const isSendingFile = ref(false);
+
+// Use draft from conversation store so text survives tab switches
+const inputText = computed({
+  get() {
+    if (!deviceStore.selectedDeviceId) return "";
+    const conv = chatStore.getConversation(deviceStore.selectedDeviceId);
+    return conv.draft || "";
+  },
+  set(val: string) {
+    if (!deviceStore.selectedDeviceId) return;
+    const conv = chatStore.getConversation(deviceStore.selectedDeviceId);
+    conv.draft = val;
+  },
+});
 
 function handleKeydown(e: KeyboardEvent) {
   if (e.key === "Enter" && !e.shiftKey) {
@@ -29,6 +45,11 @@ function handleSend() {
   if (!text) return;
   emit("send", text);
   inputText.value = "";
+  // Clear draft
+  if (deviceStore.selectedDeviceId) {
+    const conv = chatStore.getConversation(deviceStore.selectedDeviceId);
+    conv.draft = "";
+  }
   textareaRef.value?.focus();
 }
 
@@ -37,7 +58,7 @@ async function handleFilePick() {
 
   const selected = await open({
     multiple: true,
-    title: "选择要发送的文件",
+    title: t('transfer.selectFile'),
   });
 
   if (!selected) return;
@@ -70,7 +91,7 @@ async function handleFolderPick() {
 
   const selected = await open({
     directory: true,
-    title: "选择要发送的文件夹",
+    title: t('transfer.selectFolder'),
   });
 
   if (!selected) return;
@@ -107,26 +128,35 @@ function handleDragOver(e: DragEvent) {
 
 <template>
   <div class="chat-input-area" @drop="handleDrop" @dragover="handleDragOver">
-    <div class="input-wrapper">
-      <button class="tool-btn" title="发送文件" @click="handleFilePick" :disabled="isSendingFile">
-        <Paperclip :size="18" />
+    <!-- Toolbar row -->
+    <div class="toolbar-row">
+      <button class="tool-btn" :title="$t('transfer.sendFile')" @click="handleFilePick" :disabled="isSendingFile">
+        <Paperclip :size="16" />
       </button>
-      <button class="tool-btn" title="发送文件夹" @click="handleFolderPick" :disabled="isSendingFile">
-        <FolderOpen :size="18" />
+      <button class="tool-btn" :title="$t('transfer.sendFolder')" @click="handleFolderPick" :disabled="isSendingFile">
+        <FolderOpen :size="16" />
       </button>
+    </div>
+
+    <!-- Input area -->
+    <div class="input-area">
       <textarea
         ref="textareaRef"
         v-model="inputText"
         class="input-textarea"
-        rows="1"
-        placeholder="输入消息，Enter 发送，Shift+Enter 换行"
+        rows="4"
+        :placeholder="$t('chat.inputPlaceholder')"
         @keydown="handleKeydown"
       ></textarea>
+    </div>
+
+    <!-- Send button row -->
+    <div class="send-row">
       <button
         :class="['send-btn', { active: inputText.trim().length > 0 }]"
         @click="handleSend"
       >
-        <Send :size="16" />
+        {{ $t('chat.sendBtn') || '发送(S)' }}
       </button>
     </div>
   </div>
@@ -134,31 +164,25 @@ function handleDragOver(e: DragEvent) {
 
 <style scoped>
 .chat-input-area {
-  padding: 8px 16px 12px;
   flex-shrink: 0;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg-surface);
 }
 
-.input-wrapper {
+/* Toolbar */
+.toolbar-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: #f7f8f9;
-  border: 1px solid #eee;
-  border-radius: 12px;
-  padding: 8px 12px;
-  transition: border-color 0.15s;
-}
-
-.input-wrapper:focus-within {
-  border-color: #0d9488;
+  gap: 2px;
+  padding: 6px 12px 0;
 }
 
 .tool-btn {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border: none;
   background: none;
-  color: #bbb;
+  color: var(--color-text-muted);
   border-radius: 6px;
   cursor: pointer;
   display: flex;
@@ -169,8 +193,8 @@ function handleDragOver(e: DragEvent) {
 }
 
 .tool-btn:hover {
-  color: #0d9488;
-  background: rgba(13, 148, 136, 0.06);
+  color: var(--color-primary);
+  background: var(--color-primary-light);
 }
 
 .tool-btn:disabled {
@@ -178,45 +202,53 @@ function handleDragOver(e: DragEvent) {
   cursor: not-allowed;
 }
 
+/* Input */
+.input-area {
+  padding: 4px 12px;
+}
+
 .input-textarea {
-  flex: 1;
+  width: 100%;
   border: none;
   outline: none;
   background: transparent;
   font-size: 13px;
   font-family: inherit;
-  color: #333;
+  color: var(--color-text);
   resize: none;
-  min-height: 20px;
-  max-height: 80px;
   line-height: 1.5;
+  min-height: 72px;
+  max-height: 120px;
 }
 
 .input-textarea::placeholder {
-  color: #ccc;
+  color: var(--color-text-placeholder);
+}
+
+/* Send button */
+.send-row {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 12px 8px;
 }
 
 .send-btn {
-  width: 32px;
-  height: 32px;
+  padding: 4px 16px;
   border: none;
-  background: #e0e0e0;
-  color: #999;
-  border-radius: 8px;
+  background: var(--color-border);
+  color: var(--color-text-muted);
+  border-radius: 6px;
+  font-size: 12px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
   transition: all 0.15s;
 }
 
 .send-btn.active {
-  background: #0d9488;
+  background: var(--color-primary);
   color: #fff;
 }
 
 .send-btn.active:hover {
-  background: #0f766e;
+  background: var(--color-primary-hover);
 }
 </style>

@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
+import { invoke } from "@tauri-apps/api/core";
 import type { ChatMessage } from "@/types/message";
 import { formatFileSize, formatSpeed } from "@/utils/format";
 import { useTransferStore } from "@/stores/transfer";
@@ -10,6 +12,8 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { isTauri } from "@/utils/platform";
 import { Download } from "lucide-vue-next";
 
+const { t } = useI18n();
+
 const props = defineProps<{
   message: ChatMessage;
 }>();
@@ -18,6 +22,26 @@ const transferStore = useTransferStore();
 const settingsStore = useSettingsStore();
 const chatStore = useChatStore();
 const deleted = ref(false);
+
+// Check if file still exists on disk when component mounts
+onMounted(async () => {
+  if (
+    props.message.transfer_status === "completed" &&
+    props.message.file_path &&
+    isTauri()
+  ) {
+    try {
+      const exists = await invoke<boolean>("check_file_exists", {
+        path: props.message.file_path,
+      });
+      if (!exists) {
+        deleted.value = true;
+      }
+    } catch {
+      // Command may not exist yet, ignore
+    }
+  }
+});
 
 const progress = computed(() => {
   if (!props.message.file_size || props.message.file_size === 0) return 0;
@@ -42,20 +66,20 @@ const isCompleted = computed(
 );
 
 const statusLabel = computed(() => {
-  if (deleted.value) return "文件已删除";
+  if (deleted.value) return t('transfer.fileDeleted');
   switch (props.message.transfer_status) {
     case "pending":
-      return props.message.direction === "sent" ? "等待对方接收..." : "";
+      return props.message.direction === "sent" ? t('transfer.pending') : "";
     case "active":
       return `${formatSpeed(props.message.speed_bps || 0)} - ${progress.value}%`;
     case "paused":
-      return "已暂停";
+      return t('transfer.paused');
     case "completed":
       return "";
     case "failed":
-      return "传输失败";
+      return t('transfer.failed');
     case "rejected":
-      return props.message.direction === "sent" ? "对方已拒绝" : "已拒绝";
+      return props.message.direction === "sent" ? t('transfer.rejectedByPeer') : t('transfer.rejected');
     default:
       return "";
   }
@@ -91,7 +115,7 @@ async function accept() {
 
 async function acceptToDir() {
   if (!props.message.transfer_id || !isTauri()) return;
-  const dir = await open({ directory: true, title: "选择保存位置" });
+  const dir = await open({ directory: true, title: t('transfer.selectSaveLocation') });
   if (!dir) return;
   try {
     await transferStore.acceptOfferToDir(
@@ -157,12 +181,12 @@ async function handleDelete() {
       </div>
       <div class="file-info">
         <div class="file-name">{{ message.file_name }}</div>
-        <div class="file-meta">{{ formatFileSize(message.file_size || 0) }} · {{ (message.file_name || '').split('.').pop()?.toUpperCase() || '文件' }}</div>
+        <div class="file-meta">{{ formatFileSize(message.file_size || 0) }} · {{ (message.file_name || '').split('.').pop()?.toUpperCase() || $t('chat.file') }}</div>
       </div>
       <button
         v-if="isCompleted && hasFilePath && !deleted"
         class="download-btn"
-        title="打开目录"
+        :title="$t('transfer.openDir')"
         @click="handleOpenLocation"
       >
         <Download :size="14" />
@@ -186,18 +210,18 @@ async function handleDelete() {
 
     <!-- Completed: show links -->
     <div v-else-if="isCompleted && !deleted" class="file-completed">
-      <span class="completed-label">传输完成</span>
+      <span class="completed-label">{{ $t('transfer.completed') }}</span>
       <span class="completed-sep">·</span>
-      <a v-if="hasFilePath" class="link-action" @click="handleOpenLocation">打开目录</a>
+      <a v-if="hasFilePath" class="link-action" @click="handleOpenLocation">{{ $t('transfer.openDir') }}</a>
       <template v-if="hasFilePath && message.direction === 'received'">
         <span class="completed-sep">·</span>
-        <a class="link-action delete" @click="handleDelete">删除</a>
+        <a class="link-action delete" @click="handleDelete">{{ $t('transfer.delete') }}</a>
       </template>
     </div>
 
     <!-- Deleted state -->
     <div v-else-if="deleted" class="file-status deleted">
-      文件已删除
+      {{ $t('transfer.fileDeleted') }}
     </div>
 
     <!-- Status label for other states -->
@@ -207,34 +231,34 @@ async function handleDelete() {
 
     <!-- Save location hint for pending received files -->
     <div v-if="isPending" class="save-hint">
-      保存到: {{ settingsStore.downloadDir || '默认下载目录' }}
+      {{ $t('transfer.saveTo', { path: settingsStore.downloadDir || $t('transfer.defaultDir') }) }}
     </div>
 
     <!-- Pending received: accept/reject -->
     <div v-if="isPending" class="file-actions">
-      <button class="btn-accept" @click="accept">接收</button>
-      <button class="btn-save-as" @click="acceptToDir">另存为...</button>
-      <button class="btn-reject" @click="reject">拒绝</button>
+      <button class="btn-accept" @click="accept">{{ $t('transfer.accept') }}</button>
+      <button class="btn-save-as" @click="acceptToDir">{{ $t('transfer.saveAs') }}</button>
+      <button class="btn-reject" @click="reject">{{ $t('transfer.reject') }}</button>
     </div>
 
     <!-- Active: pause/cancel -->
     <div v-if="isActive && !isPaused" class="file-actions">
-      <button class="btn-action" @click="pause">暂停</button>
-      <button class="btn-action btn-cancel" @click="cancel">取消</button>
+      <button class="btn-action" @click="pause">{{ $t('transfer.pause') }}</button>
+      <button class="btn-action btn-cancel" @click="cancel">{{ $t('transfer.cancel') }}</button>
     </div>
 
     <!-- Paused: resume/cancel -->
     <div v-if="isPaused" class="file-actions">
-      <button class="btn-action" @click="resume">继续</button>
-      <button class="btn-action btn-cancel" @click="cancel">取消</button>
+      <button class="btn-action" @click="resume">{{ $t('transfer.resume') }}</button>
+      <button class="btn-action btn-cancel" @click="cancel">{{ $t('transfer.cancel') }}</button>
     </div>
   </div>
 </template>
 
 <style scoped>
 .file-card {
-  background: #fff;
-  border: 1px solid #f0f0f0;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   padding: 12px 14px;
   display: flex;
@@ -254,8 +278,8 @@ async function handleDelete() {
   width: 42px;
   height: 42px;
   border-radius: 8px;
-  background: #f0fdfa;
-  color: #0d9488;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -274,7 +298,7 @@ async function handleDelete() {
 .file-name {
   font-size: 13px;
   font-weight: 500;
-  color: #0d9488;
+  color: var(--color-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -282,7 +306,7 @@ async function handleDelete() {
 
 .file-meta {
   font-size: 11px;
-  color: #aaa;
+  color: var(--color-text-muted);
   margin-top: 2px;
 }
 
@@ -291,8 +315,8 @@ async function handleDelete() {
   height: 28px;
   border-radius: 6px;
   border: none;
-  background: #f0fdfa;
-  color: #0d9488;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -302,7 +326,7 @@ async function handleDelete() {
 }
 
 .download-btn:hover {
-  background: #ccfbf1;
+  background: var(--color-primary-border);
 }
 
 .file-progress {
@@ -311,7 +335,7 @@ async function handleDelete() {
 
 .progress-bar {
   height: 3px;
-  background: #eee;
+  background: var(--color-border);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -335,7 +359,7 @@ async function handleDelete() {
 
 .progress-text {
   font-size: 10px;
-  color: #aaa;
+  color: var(--color-text-muted);
 }
 
 .file-completed {
@@ -346,18 +370,18 @@ async function handleDelete() {
 
 .completed-label {
   font-size: 12px;
-  color: #0d9488;
+  color: var(--color-primary);
   font-weight: 500;
 }
 
 .completed-sep {
   font-size: 11px;
-  color: #ddd;
+  color: var(--color-text-placeholder);
 }
 
 .link-action {
   font-size: 12px;
-  color: #0d9488;
+  color: var(--color-primary);
   cursor: pointer;
   text-decoration: none;
   transition: color 0.15s;
@@ -368,11 +392,11 @@ async function handleDelete() {
 }
 
 .link-action.delete {
-  color: #888;
+  color: var(--color-text-secondary);
 }
 
 .link-action.delete:hover {
-  color: #ef4444;
+  color: var(--color-danger);
 }
 
 .file-status {
@@ -380,29 +404,29 @@ async function handleDelete() {
 }
 
 .file-status.completed {
-  color: #0d9488;
+  color: var(--color-primary);
 }
 
 .file-status.failed {
-  color: #ef4444;
+  color: var(--color-danger);
 }
 
 .file-status.rejected {
-  color: #888;
+  color: var(--color-text-secondary);
 }
 
 .file-status.pending {
-  color: #aaa;
+  color: var(--color-text-muted);
 }
 
 .file-status.deleted {
-  color: #888;
+  color: var(--color-text-secondary);
   font-style: italic;
 }
 
 .save-hint {
   font-size: 11px;
-  color: #aaa;
+  color: var(--color-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -419,7 +443,7 @@ async function handleDelete() {
   padding: 4px 12px;
   border: none;
   border-radius: 6px;
-  background: #0d9488;
+  background: var(--color-primary);
   color: #fff;
   font-size: 12px;
   cursor: pointer;
@@ -427,16 +451,16 @@ async function handleDelete() {
 }
 
 .btn-accept:hover {
-  background: #0f766e;
+  background: var(--color-primary-hover);
 }
 
 .btn-save-as {
   flex: 1;
   padding: 4px 12px;
-  border: 1px solid #0d9488;
+  border: 1px solid var(--color-primary);
   border-radius: 6px;
   background: transparent;
-  color: #0d9488;
+  color: var(--color-primary);
   font-size: 12px;
   cursor: pointer;
   transition: all 0.15s;
@@ -451,7 +475,7 @@ async function handleDelete() {
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: #ef4444;
+  color: var(--color-danger);
   font-size: 12px;
   cursor: pointer;
   transition: all 0.15s;
@@ -467,17 +491,17 @@ async function handleDelete() {
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: #888;
+  color: var(--color-text-secondary);
   font-size: 12px;
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .btn-action:hover {
-  color: #0d9488;
+  color: var(--color-primary);
 }
 
 .btn-action.btn-cancel:hover {
-  color: #ef4444;
+  color: var(--color-danger);
 }
 </style>

@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { invoke } from "@tauri-apps/api/core";
 import type {
   ChatMessage,
   Conversation,
@@ -11,6 +12,7 @@ import {
   getMessageHistory,
 } from "@/utils/ipc";
 import { isTauri } from "@/utils/platform";
+import { i18n } from "@/i18n";
 import type { FileOffer, TransferTask, TransferProgress } from "@/types/transfer";
 
 export const useChatStore = defineStore("chat", () => {
@@ -93,7 +95,7 @@ export const useChatStore = defineStore("chat", () => {
       id: `file-${transferId}`,
       device_id: deviceId,
       direction,
-      content: `[文件] ${fileName}`,
+      content: `${i18n.global.t('chat.filePrefix')}${fileName}`,
       msg_type: "file",
       timestamp: Date.now(),
       status: "sent",
@@ -103,6 +105,42 @@ export const useChatStore = defineStore("chat", () => {
       transferred_bytes: 0,
       transfer_status: transferStatus,
       speed_bps: 0,
+    };
+    conv.messages.push(msg);
+    conv.last_message = msg;
+    if (direction === "received") {
+      conv.unread_count += 1;
+    }
+  }
+
+  /** Add a snippet share message to the chat */
+  function addSnippetMessage(
+    deviceId: string,
+    offerId: string,
+    title: string,
+    content: string,
+    tag: string,
+    note: string,
+    direction: "sent" | "received",
+  ) {
+    const conv = getConversation(deviceId);
+    const existing = conv.messages.find((m) => m.snippet_offer_id === offerId);
+    if (existing) return;
+
+    const msg: ChatMessage = {
+      id: `snippet-${offerId}`,
+      device_id: deviceId,
+      direction,
+      content: `[${i18n.global.t('snippet.share')}] ${title}`,
+      msg_type: "snippet",
+      timestamp: Date.now(),
+      status: "sent",
+      snippet_offer_id: offerId,
+      snippet_title: title,
+      snippet_content: content,
+      snippet_tag: tag,
+      snippet_note: note,
+      snippet_status: direction === "sent" ? "accepted" : "pending",
     };
     conv.messages.push(msg);
     conv.last_message = msg;
@@ -185,6 +223,10 @@ export const useChatStore = defineStore("chat", () => {
         conv.messages.push(msg);
         conv.last_message = msg;
         conv.unread_count += 1;
+        // Flash taskbar when window not focused
+        if (!document.hasFocus()) {
+          invoke("flash_window").catch(() => {});
+        }
       },
     );
 
@@ -216,6 +258,31 @@ export const useChatStore = defineStore("chat", () => {
           "received",
           "pending",
         );
+        // Flash taskbar for incoming file
+        if (!document.hasFocus()) {
+          invoke("flash_window").catch(() => {});
+        }
+      },
+    );
+
+    // Snippet offer received → add as chat message
+    const unlistenSnippetOffer = await listen<any>(
+      "snippet-offer",
+      (event) => {
+        const offer = event.payload;
+        addSnippetMessage(
+          offer.from_device_id,
+          offer.offer_id,
+          offer.title,
+          offer.content,
+          offer.tag || "",
+          offer.note || "",
+          "received",
+        );
+        // Flash taskbar for incoming snippet
+        if (!document.hasFocus()) {
+          invoke("flash_window").catch(() => {});
+        }
       },
     );
 
@@ -271,6 +338,7 @@ export const useChatStore = defineStore("chat", () => {
       unlistenNewMsg,
       unlistenSent,
       unlistenFileOffer,
+      unlistenSnippetOffer,
       unlistenProgress,
       unlistenTransferUpdate,
       unlistenTransferComplete,
@@ -293,6 +361,7 @@ export const useChatStore = defineStore("chat", () => {
     markAsRead,
     sendMessage,
     addFileMessage,
+    addSnippetMessage,
     findFileMessage,
     updateFileProgress,
     updateFileStatus,

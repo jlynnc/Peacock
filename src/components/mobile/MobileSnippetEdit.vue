@@ -112,10 +112,10 @@ onMounted(() => {
         <ChevronLeft :size="28" />
       </button>
       <div class="nav-center">
-        <span class="nav-title">编辑片段</span>
+        <span class="nav-title">{{ $t('snippet.editSnippet') }}</span>
         <span class="save-indicator">
-          <template v-if="saveStatus === 'saving'">保存中...</template>
-          <template v-else-if="saveStatus === 'saved'">已保存</template>
+          <template v-if="saveStatus === 'saving'">{{ $t('snippet.saving') }}</template>
+          <template v-else-if="saveStatus === 'saved'">{{ $t('snippet.saved') }}</template>
         </span>
       </div>
       <div class="nav-spacer"></div>
@@ -126,7 +126,7 @@ onMounted(() => {
       <input
         v-model="title"
         class="title-input"
-        placeholder="标题"
+        :placeholder="$t('snippet.titlePlaceholder')"
         @input="onTitleInput"
       />
 
@@ -134,7 +134,7 @@ onMounted(() => {
       <textarea
         v-model="content"
         class="content-input"
-        placeholder="在此输入内容...&#10;&#10;例如 API Key、命令行、配置片段等"
+        :placeholder="$t('snippet.contentPlaceholder')"
         @input="onContentInput"
       ></textarea>
 
@@ -145,30 +145,30 @@ onMounted(() => {
           @click="copyContent"
         >
           <Copy :size="16" />
-          <span>{{ copied ? '已复制' : '复制' }}</span>
+          <span>{{ copied ? $t('snippet.copied') : $t('snippet.copy') }}</span>
         </button>
         <button class="toolbar-btn btn-share" @click="shareToDevice">
           <Share2 :size="16" />
-          <span>分享</span>
+          <span>{{ $t('snippet.share') }}</span>
         </button>
         <button class="toolbar-btn btn-delete" @click="confirmDelete = true">
           <Trash2 :size="16" />
-          <span>删除</span>
+          <span>{{ $t('common.delete') }}</span>
         </button>
       </div>
     </div>
 
     <div v-else class="empty-state">
-      <p>片段不存在</p>
+      <p>{{ $t('snippet.notFound') }}</p>
     </div>
 
     <!-- Delete confirm -->
     <div v-if="confirmDelete" class="overlay" @click="confirmDelete = false"></div>
     <div v-if="confirmDelete" class="confirm-dialog">
-      <p class="confirm-text">确定删除「{{ snippet?.title }}」？</p>
+      <p class="confirm-text">{{ $t('snippet.confirmDelete', { title: snippet?.title }) }}</p>
       <div class="confirm-actions">
-        <button class="confirm-btn btn-cancel" @click="confirmDelete = false">取消</button>
-        <button class="confirm-btn btn-confirm-delete" @click="doDelete">删除</button>
+        <button class="confirm-btn btn-cancel" @click="confirmDelete = false">{{ $t('common.cancel') }}</button>
+        <button class="confirm-btn btn-confirm-delete" @click="doDelete">{{ $t('common.delete') }}</button>
       </div>
     </div>
   </div>
@@ -180,7 +180,7 @@ onMounted(() => {
   flex-direction: column;
   height: 100vh;
   height: 100dvh;
-  background: #fff;
+  background: var(--color-ios-card);
 }
 
 .edit-nav {
@@ -188,8 +188,8 @@ onMounted(() => {
   align-items: center;
   padding: 8px 4px;
   padding-top: calc(8px + env(safe-area-inset-top, 0px));
-  background: #fff;
-  border-bottom: 0.5px solid #d1d1d6;
+  background: var(--color-ios-card);
+  border-bottom: 0.5px solid var(--color-ios-border);
   flex-shrink: 0;
   min-height: 44px;
 }
@@ -199,7 +199,7 @@ onMounted(() => {
   height: 44px;
   border: none;
   background: none;
-  color: #0d9488;
+  color: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -219,12 +219,12 @@ onMounted(() => {
 .nav-title {
   font-size: 16px;
   font-weight: 600;
-  color: #000;
+  color: var(--color-ios-text);
 }
 
 .save-indicator {
   font-size: 12px;
-  color: #8e8e93;
+  color: var(--color-ios-text-secondary);
   min-height: 16px;
 }
 
@@ -247,13 +247,13 @@ onMounted(() => {
   border: none;
   outline: none;
   background: transparent;
-  color: #000;
+  color: var(--color-ios-text);
   flex-shrink: 0;
   -webkit-appearance: none;
 }
 
 .title-input::placeholder {
-  color: #c7c7cc;
+  color: var(--color-ios-text-tertiary);
 }
 
 .content-input {
@@ -265,13 +265,13 @@ onMounted(() => {
   border: none;
   outline: none;
   background: transparent;
-  color: #000;
+  color: var(--color-ios-text);
   resize: none;
   -webkit-appearance: none;
 }
 
 .content-input::placeholder {
-  color: #c7c7cc;
+  color: var(--color-ios-text-tertiary);
 }
 
 .bottom-toolbar {
@@ -279,7 +279,7 @@ onMounted(() => {
   gap: 10px;
   padding: 12px 16px;
   padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-  border-top: 0.5px solid #d1d1d6;
+  border-top: 0.5px solid var(--color-ios-border);
   flex-shrink: 0;
 }
 
@@ -300,12 +300,12 @@ onMounted(() => {
 }
 
 .btn-copy {
-  background: #0d9488;
+  background: var(--color-primary);
   color: #fff;
 }
 
 .btn-copy:active {
-  background: #0f766e;
+  background: var(--color-primary-hover);
 }
 
 .btn-copied {
@@ -313,17 +313,17 @@ onMounted(() => {
 }
 
 .btn-share {
-  background: #f2f2f7;
-  color: #8e8e93;
+  background: var(--color-ios-bg);
+  color: var(--color-ios-text-secondary);
 }
 
 .btn-share:active {
-  background: #e5e5ea;
+  background: var(--color-ios-input-bg);
 }
 
 .btn-delete {
-  background: #fff2f2;
-  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--color-danger);
 }
 
 .btn-delete:active {
@@ -335,7 +335,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #8e8e93;
+  color: var(--color-ios-text-secondary);
   font-size: 15px;
 }
 
@@ -351,7 +351,7 @@ onMounted(() => {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: #fff;
+  background: var(--color-ios-card);
   border-radius: 14px;
   padding: 24px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
@@ -362,7 +362,7 @@ onMounted(() => {
 
 .confirm-text {
   font-size: 16px;
-  color: #000;
+  color: var(--color-ios-text);
   text-align: center;
   margin-bottom: 20px;
 }
@@ -384,12 +384,12 @@ onMounted(() => {
 }
 
 .btn-cancel {
-  background: #f2f2f7;
-  color: #000;
+  background: var(--color-ios-bg);
+  color: var(--color-ios-text);
 }
 
 .btn-confirm-delete {
-  background: #ef4444;
+  background: var(--color-danger);
   color: #fff;
 }
 </style>

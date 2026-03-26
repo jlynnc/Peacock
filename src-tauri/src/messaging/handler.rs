@@ -67,22 +67,10 @@ async fn handle_text(
                 "Text message from {} ({}): {}",
                 device_id_str,
                 peer_addr,
-                &text_payload.text[..text_payload.text.len().min(50)]
+                text_payload.text.chars().take(50).collect::<String>()
             );
 
-            {
-                let state = state.read().await;
-                if let Err(e) = state.db.store_message(
-                    &text_payload.message_id,
-                    device_id_str,
-                    "received",
-                    &text_payload.text,
-                    "text",
-                    text_payload.timestamp,
-                ) {
-                    error!("Failed to store message: {}", e);
-                }
-            }
+            // Chat history not persisted — messages are memory-only
 
             let now = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
@@ -252,23 +240,7 @@ async fn handle_snippet_share(
 ) {
     match decode_payload::<SnippetSharePayload>(payload) {
         Ok(snippet) => {
-            info!("Snippet shared from {}: {}", device_id_str, snippet.title);
-
-            let snippet_id = uuid::Uuid::new_v4().to_string();
-
-            {
-                let st = state.read().await;
-                if let Err(e) = st.db.create_snippet(
-                    &snippet_id,
-                    &snippet.title,
-                    &snippet.content,
-                    &snippet.tag,
-                    &snippet.note,
-                ) {
-                    error!("Failed to save shared snippet: {}", e);
-                    return;
-                }
-            }
+            info!("Snippet offer from {}: {}", device_id_str, snippet.title);
 
             let from_device_name = {
                 let st = state.read().await;
@@ -278,10 +250,11 @@ async fn handle_snippet_share(
                     .unwrap_or_else(|| device_id_str.to_string())
             };
 
+            // Emit as snippet-offer (like file-offer), don't auto-save
             let _ = app.emit(
-                "snippet-received",
+                "snippet-offer",
                 serde_json::json!({
-                    "id": snippet_id,
+                    "offer_id": uuid::Uuid::new_v4().to_string(),
                     "title": snippet.title,
                     "content": snippet.content,
                     "tag": snippet.tag,

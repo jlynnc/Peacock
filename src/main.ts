@@ -4,6 +4,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import App from "./App.vue";
 import "./styles/global.css";
 import { detectIsMobile } from "./utils/platform";
+import { i18n } from "./i18n";
 
 const mobileRoutes = [
   {
@@ -59,6 +60,7 @@ async function bootstrap() {
 
   const app = createApp(App);
   app.use(createPinia());
+  app.use(i18n);
   app.use(router);
   app.mount("#app");
 }

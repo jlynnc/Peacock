@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
-import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { type UnlistenFn } from "@tauri-apps/api/event";
 import type { Snippet } from "@/types/snippet";
 import {
   getSnippets as ipcGetSnippets,
@@ -11,6 +11,7 @@ import {
   shareSnippet as ipcShareSnippet,
 } from "@/utils/ipc";
 import { isTauri } from "@/utils/platform";
+import { i18n } from "@/i18n";
 
 export const useSnippetStore = defineStore("snippet", () => {
   const snippets = ref<Snippet[]>([]);
@@ -48,11 +49,12 @@ export const useSnippetStore = defineStore("snippet", () => {
   }
 
   async function createNew() {
-    const id = await ipcCreateSnippet("新建片段", "", "", "");
+    const t = i18n.global.t;
+    const id = await ipcCreateSnippet(t('snippet.newSnippet'), "", "", "");
     const now = Math.floor(Date.now() / 1000);
     snippets.value.unshift({
       id,
-      title: "新建片段",
+      title: t('snippet.newSnippet'),
       content: "",
       tag: "",
       note: "",
@@ -105,22 +107,19 @@ export const useSnippetStore = defineStore("snippet", () => {
     );
   }
 
+  /** Accept a shared snippet offer — create it locally */
+  async function createFromShare(title: string, content: string, tag: string, note: string) {
+    if (!isTauri()) return;
+    const id = await ipcCreateSnippet(title, content, tag, note);
+    await loadSnippets();
+    selectedId.value = id;
+  }
+
   async function startListening() {
     if (!isTauri()) return;
-    const unlistenReceived = await listen<any>("snippet-received", (event) => {
-      const s = event.payload;
-      snippets.value.unshift({
-        id: s.id,
-        title: s.title,
-        content: s.content,
-        tag: s.tag,
-        note: s.note,
-        copy_count: 0,
-        created_at: Math.floor(Date.now() / 1000),
-        updated_at: Math.floor(Date.now() / 1000),
-      });
-    });
-    unlisteners = [unlistenReceived];
+    // snippet-offer is handled by chat store (shows in chat as a card)
+    // No auto-save here anymore
+    unlisteners = [];
   }
 
   function stopListening() {
@@ -141,6 +140,7 @@ export const useSnippetStore = defineStore("snippet", () => {
     removeSnippet,
     incrementCopyCount,
     shareToDevice,
+    createFromShare,
     startListening,
     stopListening,
   };

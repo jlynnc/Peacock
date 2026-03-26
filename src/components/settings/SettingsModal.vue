@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import { useSettingsStore } from "@/stores/settings";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { isTauri } from "@/utils/platform";
+import { setLocale, getLocale } from "@/i18n";
 import { X } from "lucide-vue-next";
+
+const { t } = useI18n();
+const currentLocale = ref(getLocale());
 
 const emit = defineEmits<{
   close: [];
@@ -28,7 +33,7 @@ onMounted(async () => {
 
 async function pickDownloadDir() {
   if (!isTauri()) return;
-  const dir = await open({ directory: true, title: "选择默认下载目录" });
+  const dir = await open({ directory: true, title: t('settings.downloadDir') });
   if (dir) {
     editDir.value = dir as string;
   }
@@ -55,38 +60,38 @@ function handleOverlayClick(e: MouseEvent) {
   <div class="modal-overlay" @click="handleOverlayClick">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3>设置</h3>
+        <h3>{{ $t('settings.title') }}</h3>
         <button class="close-btn" @click="emit('close')">
           <X :size="18" />
         </button>
       </div>
       <div class="modal-body">
         <div class="setting-group">
-          <label class="setting-label">设备名称</label>
+          <label class="setting-label">{{ $t('settings.deviceName') }}</label>
           <input
             v-model="editName"
             class="setting-input"
-            placeholder="输入设备名称"
+            :placeholder="$t('settings.deviceNamePlaceholder')"
           />
-          <p class="setting-hint">在其他设备上显示的名称</p>
+          <p class="setting-hint">{{ $t('settings.deviceNameHint') }}</p>
         </div>
 
         <div class="setting-group">
-          <label class="setting-label">默认下载目录</label>
+          <label class="setting-label">{{ $t('settings.downloadDir') }}</label>
           <div class="dir-picker">
             <input
               v-model="editDir"
               class="setting-input dir-input"
-              placeholder="选择下载目录"
+              :placeholder="$t('settings.downloadDirPlaceholder')"
               readonly
             />
-            <button class="pick-btn" @click="pickDownloadDir">浏览</button>
+            <button class="pick-btn" @click="pickDownloadDir">{{ $t('settings.browse') }}</button>
           </div>
-          <p class="setting-hint">接收文件的默认保存位置</p>
+          <p class="setting-hint">{{ $t('settings.downloadDirHint') }}</p>
         </div>
 
         <div class="setting-group">
-          <label class="setting-label">自动接收</label>
+          <label class="setting-label">{{ $t('settings.autoAccept') }}</label>
           <div class="setting-row">
             <label class="toggle-label">
               <input
@@ -94,17 +99,96 @@ function handleOverlayClick(e: MouseEvent) {
                 v-model="settingsStore.autoAcceptFiles"
                 class="toggle-input"
               />
-              <span class="toggle-text">自动接收小文件</span>
+              <span class="toggle-text">{{ $t('settings.autoAcceptToggle') }}</span>
             </label>
           </div>
           <p class="setting-hint">
-            小于 10MB 的文件自动接收到默认目录
+            {{ $t('settings.autoAcceptHint') }}
           </p>
+        </div>
+
+        <div class="setting-group">
+          <label class="setting-label">{{ $t('settings.autoStart') }}</label>
+          <div class="setting-row">
+            <label class="toggle-label">
+              <input
+                type="checkbox"
+                :checked="settingsStore.autoStart"
+                @change="settingsStore.setAutoStart(($event.target as HTMLInputElement).checked)"
+                class="toggle-input"
+              />
+              <span class="toggle-text">{{ $t('settings.autoStartToggle') }}</span>
+            </label>
+          </div>
+          <p class="setting-hint">
+            {{ $t('settings.autoStartHint') }}
+          </p>
+        </div>
+
+        <div class="setting-group">
+          <label class="setting-label">{{ $t('settings.maxConcurrent') }}</label>
+          <div class="setting-row">
+            <select
+              class="setting-select"
+              :value="settingsStore.maxConcurrent"
+              @change="settingsStore.setMaxConcurrent(Number(($event.target as HTMLSelectElement).value))"
+            >
+              <option v-for="n in [1, 3, 5, 10, 20, 50]" :key="n" :value="n">{{ n }}</option>
+            </select>
+          </div>
+          <p class="setting-hint">{{ $t('settings.maxConcurrentHint') }}</p>
+        </div>
+
+        <div class="setting-group">
+          <label class="setting-label">{{ $t('settings.contextMenu') }}</label>
+          <div class="setting-row">
+            <label class="toggle-label">
+              <input
+                type="checkbox"
+                :checked="settingsStore.contextMenu"
+                @change="settingsStore.setContextMenu(($event.target as HTMLInputElement).checked)"
+                class="toggle-input"
+              />
+              <span class="toggle-text">{{ $t('settings.contextMenuToggle') }}</span>
+            </label>
+          </div>
+          <p class="setting-hint">
+            {{ $t('settings.contextMenuHint') }}
+          </p>
+        </div>
+
+        <div class="setting-group">
+          <label class="setting-label">{{ $t('settings.darkTheme') }}</label>
+          <div class="setting-row">
+            <select
+              class="setting-select"
+              :value="settingsStore.theme"
+              @change="settingsStore.setTheme(($event.target as HTMLSelectElement).value as any)"
+            >
+              <option value="system">{{ $t('settings.language') === '语言' ? '跟随系统' : 'Follow System' }}</option>
+              <option value="light">{{ $t('settings.language') === '语言' ? '亮色' : 'Light' }}</option>
+              <option value="dark">{{ $t('settings.language') === '语言' ? '暗色' : 'Dark' }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <label class="setting-label">{{ $t('settings.language') }}</label>
+          <div class="setting-row">
+            <select
+              class="setting-select"
+              v-model="currentLocale"
+              @change="setLocale(currentLocale)"
+            >
+              <option value="zh-CN">简体中文</option>
+              <option value="en">English</option>
+            </select>
+          </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-cancel" @click="emit('close')">取消</button>
-        <button class="btn-save" @click="save">保存</button>
+        <button class="btn-cancel" @click="emit('close')">{{ $t('settings.cancel') }}</button>
+        <button class="btn-save" @click="save">{{ $t('settings.save') }}</button>
       </div>
     </div>
   </div>
@@ -140,7 +224,7 @@ function handleOverlayClick(e: MouseEvent) {
 }
 
 .modal-dialog {
-  background: #fff;
+  background: var(--color-bg-surface);
   border-radius: 14px;
   width: 440px;
   max-height: 80vh;
@@ -158,20 +242,20 @@ function handleOverlayClick(e: MouseEvent) {
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .modal-header h3 {
   font-size: 16px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--color-text);
 }
 
 .close-btn {
   border: none;
   background: none;
   cursor: pointer;
-  color: #bbb;
+  color: var(--color-text-muted);
   padding: 4px;
   border-radius: 6px;
   display: flex;
@@ -181,8 +265,8 @@ function handleOverlayClick(e: MouseEvent) {
 }
 
 .close-btn:hover {
-  background: #f5f5f5;
-  color: #666;
+  background: var(--color-bg-input);
+  color: var(--color-text-secondary);
 }
 
 .modal-body {
@@ -201,29 +285,29 @@ function handleOverlayClick(e: MouseEvent) {
 .setting-label {
   font-size: 13px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--color-text);
 }
 
 .setting-input {
   padding: 8px 12px;
-  border: 1px solid #eee;
+  border: 1px solid var(--color-border-input);
   border-radius: 8px;
   font-size: 13px;
   outline: none;
-  background: #f7f8f9;
-  color: #1a1a1a;
+  background: var(--color-bg-input);
+  color: var(--color-text);
   transition: border-color 0.15s;
 }
 .setting-input::placeholder {
-  color: #ccc;
+  color: var(--color-text-placeholder);
 }
 .setting-input:focus {
-  border-color: #0d9488;
+  border-color: var(--color-primary);
 }
 
 .setting-hint {
   font-size: 12px;
-  color: #aaa;
+  color: var(--color-text-muted);
 }
 
 .dir-picker {
@@ -238,10 +322,10 @@ function handleOverlayClick(e: MouseEvent) {
 
 .pick-btn {
   padding: 8px 16px;
-  border: 1px solid #eee;
+  border: 1px solid var(--color-border-input);
   border-radius: 8px;
-  background: #f7f8f9;
-  color: #666;
+  background: var(--color-bg-input);
+  color: var(--color-text-secondary);
   font-size: 13px;
   cursor: pointer;
   flex-shrink: 0;
@@ -249,8 +333,8 @@ function handleOverlayClick(e: MouseEvent) {
 }
 
 .pick-btn:hover {
-  border-color: #0d9488;
-  color: #0d9488;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .setting-row {
@@ -268,12 +352,28 @@ function handleOverlayClick(e: MouseEvent) {
 .toggle-input {
   width: 16px;
   height: 16px;
-  accent-color: #0d9488;
+  accent-color: var(--color-primary);
 }
 
 .toggle-text {
   font-size: 13px;
-  color: #1a1a1a;
+  color: var(--color-text);
+}
+
+.setting-select {
+  padding: 8px 12px;
+  border: 1px solid var(--color-border-input);
+  border-radius: 8px;
+  font-size: 13px;
+  outline: none;
+  background: var(--color-bg-input);
+  color: var(--color-text);
+  cursor: pointer;
+  min-width: 160px;
+  transition: border-color 0.15s;
+}
+.setting-select:focus {
+  border-color: var(--color-primary);
 }
 
 .modal-footer {
@@ -281,29 +381,29 @@ function handleOverlayClick(e: MouseEvent) {
   justify-content: flex-end;
   gap: 8px;
   padding: 12px 20px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--color-border);
 }
 
 .btn-cancel {
   padding: 8px 20px;
   border: none;
   border-radius: 8px;
-  background: #f5f5f5;
-  color: #666;
+  background: var(--color-bg-input);
+  color: var(--color-text-secondary);
   font-size: 13px;
   cursor: pointer;
   transition: background 0.15s;
 }
 
 .btn-cancel:hover {
-  background: #eee;
+  background: var(--color-border);
 }
 
 .btn-save {
   padding: 8px 20px;
   border: none;
   border-radius: 8px;
-  background: #0d9488;
+  background: var(--color-primary);
   color: #fff;
   font-size: 13px;
   cursor: pointer;
@@ -311,6 +411,6 @@ function handleOverlayClick(e: MouseEvent) {
 }
 
 .btn-save:hover {
-  background: #0f766e;
+  background: var(--color-primary-hover);
 }
 </style>

@@ -9,6 +9,9 @@ mod transfer;
 
 use std::sync::Arc;
 use tauri::Manager;
+use tauri::Emitter;
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+use tauri::menu::{Menu, MenuItem};
 use tokio::sync::RwLock;
 use tracing::info;
 
@@ -25,11 +28,30 @@ pub fn run() {
         .init();
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
+            // Another instance was launched — bring existing window to front
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.unminimize();
+                let _ = window.set_focus();
+            }
+            // If launched with --send argument, emit event to frontend
+            if let Some(pos) = argv.iter().position(|a| a == "--send") {
+                if let Some(file_path) = argv.get(pos + 1) {
+                    let _ = app.emit("send-file-request", file_path.clone());
+                }
+            }
+        }))
+        .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_os::init())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            Some(vec![]),
+        ))
         .invoke_handler(tauri::generate_handler![
             // Discovery
             discovery::commands::get_online_devices,
@@ -55,9 +77,18 @@ pub fn run() {
             // Settings
             settings_commands::update_device_name,
             settings_commands::update_download_dir,
+            settings_commands::set_max_concurrent,
             // File utilities
             file_commands::open_file_location,
             file_commands::delete_file,
+            file_commands::check_file_exists,
+            // Window utilities
+            window_commands::flash_window,
+            window_commands::stop_flash,
+            // Context menu
+            context_menu_commands::register_context_menu,
+            context_menu_commands::unregister_context_menu,
+            context_menu_commands::is_context_menu_registered,
             // Snippets
             snippet_commands::get_snippets,
             snippet_commands::create_snippet,
@@ -65,6 +96,7 @@ pub fn run() {
             snippet_commands::delete_snippet,
             snippet_commands::copy_snippet,
             snippet_commands::share_snippet,
+            snippet_commands::reorder_snippets,
         ])
         .setup(|app| {
             let data_dir = app
@@ -94,7 +126,59 @@ pub fn run() {
             discovery::probe::spawn_probe(state.clone(), app_handle.clone());
             messaging::server::spawn_server(state.clone(), app_handle.clone());
 
+            // ── System tray ──
+            #[cfg(desktop)]
+            {
+                let show = MenuItem::with_id(app, "show", "显示 Peacock", true, None::<&str>)?;
+                let quit = MenuItem::with_id(app, "quit", "退出", true, None::<&str>)?;
+                let menu = Menu::with_items(app, &[&show, &quit])?;
+
+                let _tray = TrayIconBuilder::with_id("main")
+                    .icon(app.default_window_icon().unwrap().clone())
+                    .menu(&menu)
+                    .menu_on_left_click(false)
+                    .on_menu_event(|app, event| match event.id.as_ref() {
+                        "show" => {
+                            if let Some(window) = app.get_webview_window("main") {
+                                let _ = window.show();
+                                let _ = window.unminimize();
+                                let _ = window.set_focus();
+                            }
+                        }
+                        "quit" => {
+                            app.exit(0);
+                        }
+                        _ => {}
+                    })
+                    .on_tray_icon_event(|tray, event| {
+                        if let TrayIconEvent::Click {
+                            button: MouseButton::Left,
+                            button_state: MouseButtonState::Up,
+                            ..
+                        } = event
+                        {
+                            let app = tray.app_handle();
+                            if let Some(window) = app.get_webview_window("main") {
+                                let _ = window.show();
+                                let _ = window.unminimize();
+                                let _ = window.set_focus();
+                            }
+                        }
+                    })
+                    .build(app)?;
+            }
+
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            // Minimize to tray on close instead of quitting
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                #[cfg(desktop)]
+                {
+                    let _ = window.hide();
+                    api.prevent_close();
+                }
+            }
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -169,6 +253,12 @@ mod file_commands {
         Ok(())
     }
 
+    /// Check if a file or directory exists
+    #[tauri::command]
+    pub async fn check_file_exists(path: String) -> Result<bool, PeacockError> {
+        Ok(Path::new(&path).exists())
+    }
+
     /// Delete a received file or directory from disk
     #[tauri::command]
     pub async fn delete_file(path: String) -> Result<(), PeacockError> {
@@ -203,6 +293,17 @@ mod settings_commands {
         let mut state = state.write().await;
         state.device_name = name.clone();
         state.db.set_setting("device_name", &name)?;
+        Ok(())
+    }
+
+    #[tauri::command]
+    pub async fn set_max_concurrent(
+        state: tauri::State<'_, Arc<RwLock<AppState>>>,
+        max: usize,
+    ) -> Result<(), PeacockError> {
+        let mut state = state.write().await;
+        state.transfer_semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(max));
+        state.db.set_setting("max_concurrent", &max.to_string())?;
         Ok(())
     }
 
@@ -286,6 +387,16 @@ mod snippet_commands {
     }
 
     #[tauri::command]
+    pub async fn reorder_snippets(
+        state: tauri::State<'_, Arc<RwLock<AppState>>>,
+        ids: Vec<String>,
+    ) -> Result<(), PeacockError> {
+        let state = state.read().await;
+        state.db.reorder_snippets(&ids)?;
+        Ok(())
+    }
+
+    #[tauri::command]
     pub async fn share_snippet(
         state: tauri::State<'_, Arc<RwLock<AppState>>>,
         device_id: String,
@@ -316,5 +427,173 @@ mod snippet_commands {
         send_to_device(target_addr, PacketType::SnippetShare, &self_device_id_bytes, &payload)
             .await?;
         Ok(())
+    }
+}
+
+mod window_commands {
+    use tauri::Manager;
+    use tauri::image::Image;
+    use std::sync::atomic::{AtomicBool, Ordering};
+
+    static TRAY_FLASHING: AtomicBool = AtomicBool::new(false);
+
+    /// Flash the taskbar icon and tray to alert the user (continuous until window focused)
+    #[tauri::command]
+    pub async fn flash_window(app: tauri::AppHandle) -> Result<(), String> {
+        // Flash taskbar
+        if let Some(window) = app.get_webview_window("main") {
+            let _ = window.request_user_attention(Some(tauri::UserAttentionType::Informational));
+        }
+
+        // Start continuous tray flash if not already flashing
+        if TRAY_FLASHING.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_ok() {
+            let app_clone = app.clone();
+            tauri::async_runtime::spawn(async move {
+                let normal_icon = app_clone.default_window_icon().cloned();
+                // Create a small red dot icon (16x16) for notification state
+                let mut red_dot = vec![0u8; 16 * 16 * 4];
+                for y in 0..16u32 {
+                    for x in 0..16u32 {
+                        let idx = ((y * 16 + x) * 4) as usize;
+                        let dx = x as f32 - 8.0;
+                        let dy = y as f32 - 8.0;
+                        let dist = (dx * dx + dy * dy).sqrt();
+                        if dist < 7.0 {
+                            red_dot[idx] = 239;     // R
+                            red_dot[idx + 1] = 68;  // G
+                            red_dot[idx + 2] = 68;  // B
+                            red_dot[idx + 3] = 255;  // A
+                        }
+                    }
+                }
+                let alert_icon = Image::new_owned(red_dot, 16, 16);
+
+                while TRAY_FLASHING.load(Ordering::SeqCst) {
+                    // Show alert icon
+                    if let Some(tray) = app_clone.tray_by_id("main") {
+                        let _ = tray.set_icon(Some(alert_icon.clone()));
+                    }
+                    tokio::time::sleep(std::time::Duration::from_millis(600)).await;
+
+                    if !TRAY_FLASHING.load(Ordering::SeqCst) { break; }
+
+                    // Show normal icon
+                    if let Some(ref normal) = normal_icon {
+                        if let Some(tray) = app_clone.tray_by_id("main") {
+                            let _ = tray.set_icon(Some(normal.clone()));
+                        }
+                    }
+                    tokio::time::sleep(std::time::Duration::from_millis(600)).await;
+                }
+
+                // Ensure normal icon is restored
+                if let Some(ref normal) = normal_icon {
+                    if let Some(tray) = app_clone.tray_by_id("main") {
+                        let _ = tray.set_icon(Some(normal.clone()));
+                    }
+                }
+            });
+        }
+
+        Ok(())
+    }
+
+    /// Stop tray flashing (called when window gains focus)
+    #[tauri::command]
+    pub async fn stop_flash(app: tauri::AppHandle) -> Result<(), String> {
+        TRAY_FLASHING.store(false, Ordering::SeqCst);
+        // Restore normal icon immediately
+        if let Some(normal) = app.default_window_icon().cloned() {
+            if let Some(tray) = app.tray_by_id("main") {
+                let _ = tray.set_icon(Some(normal));
+            }
+        }
+        Ok(())
+    }
+}
+
+mod context_menu_commands {
+    /// Register Windows Explorer right-click "Send to Peacock" menu
+    #[tauri::command]
+    pub async fn register_context_menu() -> Result<(), String> {
+        #[cfg(target_os = "windows")]
+        {
+            let exe_path = std::env::current_exe()
+                .map_err(|e| format!("Failed to get exe path: {}", e))?;
+            let exe_str = exe_path.to_string_lossy().replace("\\", "\\\\");
+
+            // Register for files: HKCU\Software\Classes\*\shell\Peacock
+            let output = std::process::Command::new("reg")
+                .args(["add", r"HKCU\Software\Classes\*\shell\Peacock", "/ve", "/d", "发送到 Peacock", "/f"])
+                .output()
+                .map_err(|e| format!("reg add failed: {}", e))?;
+            if !output.status.success() {
+                return Err("Failed to register file context menu".into());
+            }
+
+            // Set icon
+            std::process::Command::new("reg")
+                .args(["add", r"HKCU\Software\Classes\*\shell\Peacock", "/v", "Icon", "/d", &exe_str, "/f"])
+                .output()
+                .ok();
+
+            // Set command
+            let cmd = format!("\"{}\" --send \"%1\"", exe_path.to_string_lossy());
+            std::process::Command::new("reg")
+                .args(["add", r"HKCU\Software\Classes\*\shell\Peacock\command", "/ve", "/d", &cmd, "/f"])
+                .output()
+                .map_err(|e| format!("reg add command failed: {}", e))?;
+
+            // Register for folders: HKCU\Software\Classes\Directory\shell\Peacock
+            std::process::Command::new("reg")
+                .args(["add", r"HKCU\Software\Classes\Directory\shell\Peacock", "/ve", "/d", "发送到 Peacock", "/f"])
+                .output()
+                .ok();
+
+            std::process::Command::new("reg")
+                .args(["add", r"HKCU\Software\Classes\Directory\shell\Peacock", "/v", "Icon", "/d", &exe_str, "/f"])
+                .output()
+                .ok();
+
+            let folder_cmd = format!("\"{}\" --send \"%1\"", exe_path.to_string_lossy());
+            std::process::Command::new("reg")
+                .args(["add", r"HKCU\Software\Classes\Directory\shell\Peacock\command", "/ve", "/d", &folder_cmd, "/f"])
+                .output()
+                .ok();
+        }
+
+        Ok(())
+    }
+
+    /// Unregister the right-click context menu
+    #[tauri::command]
+    pub async fn unregister_context_menu() -> Result<(), String> {
+        #[cfg(target_os = "windows")]
+        {
+            std::process::Command::new("reg")
+                .args(["delete", r"HKCU\Software\Classes\*\shell\Peacock", "/f"])
+                .output()
+                .ok();
+            std::process::Command::new("reg")
+                .args(["delete", r"HKCU\Software\Classes\Directory\shell\Peacock", "/f"])
+                .output()
+                .ok();
+        }
+        Ok(())
+    }
+
+    /// Check if context menu is registered
+    #[tauri::command]
+    pub async fn is_context_menu_registered() -> Result<bool, String> {
+        #[cfg(target_os = "windows")]
+        {
+            let output = std::process::Command::new("reg")
+                .args(["query", r"HKCU\Software\Classes\*\shell\Peacock"])
+                .output()
+                .map_err(|e| format!("reg query failed: {}", e))?;
+            return Ok(output.status.success());
+        }
+        #[cfg(not(target_os = "windows"))]
+        Ok(false)
     }
 }

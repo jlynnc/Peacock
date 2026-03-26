@@ -31,8 +31,8 @@ let unlistenDragDrop: (() => void) | null = null;
 
 watch(
   () => props.device.device_id,
-  () => {
-    chatStore.markAsRead(props.device.device_id);
+  (id) => {
+    chatStore.markAsRead(id);
     scrollToBottom();
   },
 );
@@ -134,7 +134,7 @@ onUnmounted(() => {
             v-model="searchQuery"
             class="search-input"
             type="text"
-            placeholder="搜索消息..."
+            :placeholder="$t('chat.searchPlaceholder')"
           />
         </div>
       </div>
@@ -146,7 +146,7 @@ onUnmounted(() => {
     </div>
     <div ref="messageListRef" class="message-list">
       <div v-if="messages.length === 0" class="no-messages">
-        <p>暂无消息，发送第一条消息吧</p>
+        <p>{{ $t('chat.noMessages') }}</p>
       </div>
       <ChatBubble
         v-for="msg in messages"
@@ -159,7 +159,7 @@ onUnmounted(() => {
     <div v-if="isDragOver" class="drag-overlay">
       <div class="drag-hint">
         <FolderOpen :size="48" />
-        <span>释放以发送文件</span>
+        <span>{{ $t('chat.dropToSend') }}</span>
       </div>
     </div>
     <ChatInput @send="handleSend" :device-id="device.device_id" />
@@ -172,7 +172,7 @@ onUnmounted(() => {
   flex-direction: column;
   height: 100%;
   position: relative;
-  background: #fff;
+  background: var(--color-bg-surface);
 }
 
 /* Unified title bar */
@@ -181,7 +181,7 @@ onUnmounted(() => {
   align-items: center;
   height: 56px;
   padding: 0 12px 0 20px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
   -webkit-app-region: drag;
   gap: 16px;
@@ -198,7 +198,7 @@ onUnmounted(() => {
 .chat-device-name {
   font-size: 15px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--color-text);
 }
 
 .status-badge {
@@ -206,8 +206,8 @@ onUnmounted(() => {
   align-items: center;
   gap: 5px;
   padding: 3px 10px;
-  background: #ecfdf5;
-  color: #059669;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
   border-radius: 10px;
   font-size: 12px;
 }
@@ -215,7 +215,7 @@ onUnmounted(() => {
 .status-dot {
   width: 6px;
   height: 6px;
-  background: #059669;
+  background: var(--color-primary);
   border-radius: 50%;
 }
 
@@ -230,8 +230,8 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #f7f8f9;
-  border: 1px solid #eee;
+  background: var(--color-bg-input);
+  border: 1px solid var(--color-border-input);
   border-radius: 10px;
   padding: 7px 14px;
   width: 240px;
@@ -241,17 +241,17 @@ onUnmounted(() => {
 }
 
 .search-box:focus-within {
-  border-color: #0d9488;
+  border-color: var(--color-primary);
 }
 
 .search-icon {
-  color: #bbb;
+  color: var(--color-text-muted);
   flex-shrink: 0;
   transition: color 0.15s;
 }
 
 .search-box:focus-within .search-icon {
-  color: #0d9488;
+  color: var(--color-primary);
 }
 
 .search-input {
@@ -261,12 +261,12 @@ onUnmounted(() => {
   background: transparent;
   font-size: 13px;
   font-family: inherit;
-  color: #333;
+  color: var(--color-text);
   line-height: 1.5;
 }
 
 .search-input::placeholder {
-  color: #ccc;
+  color: var(--color-text-placeholder);
 }
 
 .titlebar-right {
@@ -282,7 +282,7 @@ onUnmounted(() => {
   height: 28px;
   border: none;
   background: none;
-  color: #bbb;
+  color: var(--color-text-muted);
   cursor: pointer;
   border-radius: 6px;
   display: flex;
@@ -292,13 +292,13 @@ onUnmounted(() => {
 }
 
 .win-btn:hover {
-  background: #f0f0f0;
-  color: #666;
+  background: var(--color-bg-input);
+  color: var(--color-text-secondary);
 }
 
 .win-close:hover {
-  background: #fee2e2;
-  color: #ef4444;
+  background: var(--color-danger-light);
+  color: var(--color-danger);
 }
 
 .message-list {
@@ -308,7 +308,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  background: #fafbfc;
+  background: var(--color-bg-chat);
 }
 
 .no-messages {
@@ -316,7 +316,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #bbb;
+  color: var(--color-text-muted);
   font-size: 13px;
 }
 
@@ -324,7 +324,7 @@ onUnmounted(() => {
   position: absolute;
   inset: 0;
   background: rgba(13, 148, 136, 0.04);
-  border: 2px dashed #0d9488;
+  border: 2px dashed var(--color-primary);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -338,7 +338,7 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  color: #0d9488;
+  color: var(--color-primary);
   font-size: 16px;
   font-weight: 500;
 }

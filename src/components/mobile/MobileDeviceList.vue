@@ -47,7 +47,7 @@ function openChat(deviceId: string) {
 <template>
   <div class="mobile-device-list">
     <div class="page-header">
-      <h1 class="page-title">{{'设备'}}</h1>
+      <h1 class="page-title">{{ $t('tabs.devices') }}</h1>
     </div>
 
     <div class="search-bar">
@@ -55,7 +55,7 @@ function openChat(deviceId: string) {
         v-model="searchQuery"
         type="text"
         class="search-input"
-        placeholder="搜索设备..."
+        :placeholder="$t('search.devicePlaceholder')"
       />
     </div>
 
@@ -63,8 +63,8 @@ function openChat(deviceId: string) {
       <div class="scanning-icon">
         <Wifi :size="32" color="#c7c7cc" />
       </div>
-      <p class="empty-text">正在搜索设备...</p>
-      <p class="empty-hint">请确保其他设备在同一局域网</p>
+      <p class="empty-text">{{ $t('device.searching') }}</p>
+      <p class="empty-hint">{{ $t('device.searchHint') }}</p>
     </div>
 
     <div v-else class="device-items">
@@ -106,7 +106,7 @@ function openChat(deviceId: string) {
 <style scoped>
 .mobile-device-list {
   min-height: 100%;
-  background: #f2f2f7;
+  background: var(--color-ios-bg);
 }
 
 .page-header {
@@ -117,7 +117,7 @@ function openChat(deviceId: string) {
 .page-title {
   font-size: 30px;
   font-weight: 800;
-  color: #000;
+  color: var(--color-ios-text);
   margin: 0;
   letter-spacing: -0.5px;
 }
@@ -132,14 +132,14 @@ function openChat(deviceId: string) {
   border: none;
   border-radius: 12px;
   font-size: 16px;
-  background: #e5e5ea;
-  color: #000;
+  background: var(--color-ios-input-bg);
+  color: var(--color-ios-text);
   outline: none;
   -webkit-appearance: none;
 }
 
 .search-input::placeholder {
-  color: #8e8e93;
+  color: var(--color-ios-text-secondary);
 }
 
 .empty-state {
@@ -161,12 +161,12 @@ function openChat(deviceId: string) {
 
 .empty-text {
   font-size: 15px;
-  color: #8e8e93;
+  color: var(--color-ios-text-secondary);
 }
 
 .empty-hint {
   font-size: 13px;
-  color: #c7c7cc;
+  color: var(--color-ios-text-tertiary);
 }
 
 .device-items {
@@ -178,7 +178,7 @@ function openChat(deviceId: string) {
   align-items: center;
   gap: 13px;
   padding: 12px 14px;
-  background: #fff;
+  background: var(--color-ios-card);
   border-radius: 14px;
   margin-bottom: 8px;
   cursor: pointer;
@@ -187,7 +187,7 @@ function openChat(deviceId: string) {
 }
 
 .device-row:active {
-  background: #f0f0f0;
+  background: var(--color-ios-hover);
 }
 
 .device-avatar-wrap {
@@ -211,7 +211,7 @@ function openChat(deviceId: string) {
   width: 12px;
   height: 12px;
   background: #34c759;
-  border: 2.5px solid #fff;
+  border: 2.5px solid var(--color-ios-card);
   border-radius: 50%;
 }
 
@@ -230,7 +230,7 @@ function openChat(deviceId: string) {
 .device-name {
   font-size: 16px;
   font-weight: 600;
-  color: #000;
+  color: var(--color-ios-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -238,7 +238,7 @@ function openChat(deviceId: string) {
 
 .device-time {
   font-size: 13px;
-  color: #8e8e93;
+  color: var(--color-ios-text-secondary);
   flex-shrink: 0;
   margin-left: 8px;
 }
@@ -251,7 +251,7 @@ function openChat(deviceId: string) {
 
 .device-preview {
   font-size: 14px;
-  color: #8e8e93;
+  color: var(--color-ios-text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -261,7 +261,7 @@ function openChat(deviceId: string) {
 .unread-badge {
   min-width: 20px;
   height: 20px;
-  background: #0d9488;
+  background: var(--color-primary);
   color: #fff;
   font-size: 12px;
   font-weight: 600;

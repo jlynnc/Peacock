@@ -36,7 +36,7 @@ defineProps<{
 }
 
 .device-item:hover {
-  background: #f5f5f5;
+  background: var(--color-bg-input);
 }
 
 .device-item.active {
@@ -51,7 +51,7 @@ defineProps<{
 .device-name {
   font-size: 13px;
   font-weight: 500;
-  color: #1a1a1a;
+  color: var(--color-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -59,7 +59,7 @@ defineProps<{
 
 .device-meta {
   font-size: 11px;
-  color: #aaa;
+  color: var(--color-text-muted);
   margin-top: 1px;
   white-space: nowrap;
   overflow: hidden;
@@ -69,7 +69,7 @@ defineProps<{
 .unread-badge {
   min-width: 18px;
   height: 18px;
-  background: #0d9488;
+  background: var(--color-primary);
   color: #fff;
   font-size: 10px;
   font-weight: 600;

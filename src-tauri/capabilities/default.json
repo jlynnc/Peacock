@@ -11,6 +11,8 @@
     "notification:default",
     "fs:default",
     "clipboard-manager:default",
-    "os:default"
+    "os:default",
+    "autostart:default",
+    "shell:allow-open"
   ]
 }

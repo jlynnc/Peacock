@@ -22,6 +22,12 @@ pub async fn start_sending(
     receiver_addr: SocketAddr,
     resume_offset: u64,
 ) {
+    // Acquire transfer semaphore to limit concurrent transfers
+    let semaphore = {
+        let st = state.read().await;
+        st.transfer_semaphore.clone()
+    };
+
     // Check if this is a folder transfer
     let (is_folder, folder_manifest, base_path) = {
         let st = state.read().await;
@@ -34,6 +40,7 @@ pub async fn start_sending(
 
     if is_folder && !folder_manifest.is_empty() {
         tauri::async_runtime::spawn(async move {
+            let _permit = semaphore.acquire().await.expect("semaphore closed");
             if let Err(e) = do_send_folder(
                 state.clone(),
                 app_handle.clone(),
@@ -56,6 +63,7 @@ pub async fn start_sending(
         });
     } else {
         tauri::async_runtime::spawn(async move {
+            let _permit = semaphore.acquire().await.expect("semaphore closed");
             if let Err(e) = do_send(
                 state.clone(),
                 app_handle.clone(),

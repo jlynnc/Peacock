@@ -17,6 +17,8 @@ export function formatSpeed(bytesPerSecond: number): string {
   return `${formatFileSize(bytesPerSecond)}/s`;
 }
 
+import { i18n } from "@/i18n";
+
 /**
  * Format timestamp to display time
  */
@@ -35,7 +37,7 @@ export function formatTime(timestamp: number): string {
   const yesterday = new Date(now);
   yesterday.setDate(yesterday.getDate() - 1);
   if (date.toDateString() === yesterday.toDateString()) {
-    return `昨天 ${time}`;
+    return `${i18n.global.t('common.yesterday')} ${time}`;
   }
 
   return date.toLocaleDateString("zh-CN", {

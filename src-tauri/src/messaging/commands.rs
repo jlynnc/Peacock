@@ -42,18 +42,7 @@ pub async fn send_message(
 
     send_to_device(target_addr, PacketType::Text, &self_device_id_bytes, &payload).await?;
 
-    // Store sent message in database
-    {
-        let state = state.read().await;
-        let _ = state.db.store_message(
-            &message_id,
-            &device_id,
-            "sent",
-            &text,
-            "text",
-            now,
-        );
-    }
+    // Chat history not persisted — messages are memory-only
 
     Ok(message_id)
 }

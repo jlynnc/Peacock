@@ -37,6 +37,97 @@
   --color-warning: #f59e0b;
   --color-shadow: rgba(0, 0, 0, 0.04);
   --color-shadow-md: rgba(0, 0, 0, 0.08);
+
+  /* iOS mobile */
+  --color-ios-bg: #f2f2f7;
+  --color-ios-card: #fff;
+  --color-ios-text: #000;
+  --color-ios-text-secondary: #8e8e93;
+  --color-ios-text-tertiary: #c7c7cc;
+  --color-ios-border: #d1d1d6;
+  --color-ios-separator: #e5e5ea;
+  --color-ios-input-bg: #e5e5ea;
+  --color-ios-hover: #f0f0f0;
+}
+
+/* Dark theme */
+[data-theme="dark"] {
+  --color-primary: #2dd4bf;
+  --color-primary-hover: #14b8a6;
+  --color-primary-light: rgba(45, 212, 191, 0.1);
+  --color-primary-gradient: linear-gradient(135deg, #1a3a38, #1e3a38);
+  --color-primary-border: #1a3a38;
+
+  --color-bg: #1a1a1a;
+  --color-bg-app: #222;
+  --color-bg-sidebar: #1e1e1e;
+  --color-bg-chat: #252525;
+  --color-bg-input: #2a2a2a;
+  --color-bg-surface: #222;
+
+  --color-text: #e5e5e5;
+  --color-text-secondary: #999;
+  --color-text-muted: #666;
+  --color-text-placeholder: #555;
+  --color-text-bubble-sent: #ccfbf1;
+
+  --color-border: #333;
+  --color-border-input: #3a3a3a;
+
+  --color-shadow: rgba(0, 0, 0, 0.2);
+  --color-shadow-md: rgba(0, 0, 0, 0.3);
+
+  /* iOS mobile */
+  --color-ios-bg: #000;
+  --color-ios-card: #1c1c1e;
+  --color-ios-text: #fff;
+  --color-ios-text-secondary: #8e8e93;
+  --color-ios-text-tertiary: #48484a;
+  --color-ios-border: #38383a;
+  --color-ios-separator: #38383a;
+  --color-ios-input-bg: #2c2c2e;
+  --color-ios-hover: #2c2c2e;
+}
+
+/* System preference dark mode */
+@media (prefers-color-scheme: dark) {
+  [data-theme="system"] {
+    --color-primary: #2dd4bf;
+    --color-primary-hover: #14b8a6;
+    --color-primary-light: rgba(45, 212, 191, 0.1);
+    --color-primary-gradient: linear-gradient(135deg, #1a3a38, #1e3a38);
+    --color-primary-border: #1a3a38;
+
+    --color-bg: #1a1a1a;
+    --color-bg-app: #222;
+    --color-bg-sidebar: #1e1e1e;
+    --color-bg-chat: #252525;
+    --color-bg-input: #2a2a2a;
+    --color-bg-surface: #222;
+
+    --color-text: #e5e5e5;
+    --color-text-secondary: #999;
+    --color-text-muted: #666;
+    --color-text-placeholder: #555;
+    --color-text-bubble-sent: #ccfbf1;
+
+    --color-border: #333;
+    --color-border-input: #3a3a3a;
+
+    --color-shadow: rgba(0, 0, 0, 0.2);
+    --color-shadow-md: rgba(0, 0, 0, 0.3);
+
+    /* iOS mobile */
+    --color-ios-bg: #000;
+    --color-ios-card: #1c1c1e;
+    --color-ios-text: #fff;
+    --color-ios-text-secondary: #8e8e93;
+    --color-ios-text-tertiary: #48484a;
+    --color-ios-border: #38383a;
+    --color-ios-separator: #38383a;
+    --color-ios-input-bg: #2c2c2e;
+    --color-ios-hover: #2c2c2e;
+  }
 }
 
 * {
@@ -68,7 +159,7 @@ body,
 }
 
 ::selection {
-  background: #ccfbf1;
+  background: var(--color-primary-light);
   color: var(--color-text);
 }
 

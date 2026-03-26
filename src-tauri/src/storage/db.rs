@@ -10,6 +10,8 @@ pub struct Database {
 }
 
 impl Database {
+    /// Current database schema version. Increment this when adding new migrations.
+    const CURRENT_DB_VERSION: i64 = 2;
     pub fn new(data_dir: &PathBuf) -> Result<Self> {
         std::fs::create_dir_all(data_dir)?;
         let db_path = data_dir.join("peacock.db");
@@ -20,6 +22,7 @@ impl Database {
             conn: Mutex::new(conn),
         };
         db.init_tables()?;
+        db.run_migrations()?;
         Ok(db)
     }
 
@@ -89,6 +92,64 @@ impl Database {
             CREATE INDEX IF NOT EXISTS idx_snippets_updated ON snippets(updated_at DESC);
             ",
         )?;
+        Ok(())
+    }
+
+    fn get_db_version(&self) -> i64 {
+        let conn = self.conn.lock().unwrap();
+        conn.query_row(
+            "SELECT value FROM settings WHERE key = 'db_version'",
+            [],
+            |row| row.get::<_, String>(0),
+        )
+        .ok()
+        .and_then(|v| v.parse::<i64>().ok())
+        .unwrap_or(0)
+    }
+
+    fn set_db_version(&self, version: i64) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES ('db_version', ?1)",
+            params![version.to_string()],
+        )?;
+        Ok(())
+    }
+
+    fn run_migrations(&self) -> Result<()> {
+        let current = self.get_db_version();
+        if current >= Self::CURRENT_DB_VERSION {
+            info!("Database is up to date (version {})", current);
+            return Ok(());
+        }
+
+        info!(
+            "Running database migrations from version {} to {}",
+            current,
+            Self::CURRENT_DB_VERSION
+        );
+
+        let conn = self.conn.lock().unwrap();
+
+        // Migration 1: Initial schema (baseline for existing databases)
+        if current < 1 {
+            info!("Migration 1: Setting baseline version");
+            // Tables already created by init_tables, just mark version
+        }
+
+        // Migration 2: Add sort_order to snippets for drag-drop reordering
+        if current < 2 {
+            info!("Migration 2: Add sort_order to snippets");
+            conn.execute_batch(
+                "ALTER TABLE snippets ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0;"
+            )?;
+        }
+
+        // ── Future migrations go here ──
+
+        drop(conn);
+        self.set_db_version(Self::CURRENT_DB_VERSION)?;
+        info!("Database migrated to version {}", Self::CURRENT_DB_VERSION);
         Ok(())
     }
 
@@ -216,8 +277,8 @@ impl Database {
     pub fn get_all_snippets(&self) -> Result<Vec<serde_json::Value>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
-            "SELECT id, title, content, tag, note, copy_count, created_at, updated_at
-             FROM snippets ORDER BY updated_at DESC",
+            "SELECT id, title, content, tag, note, copy_count, created_at, updated_at, sort_order
+             FROM snippets ORDER BY sort_order ASC, updated_at DESC",
         )?;
         let rows = stmt
             .query_map([], |row| {
@@ -230,11 +291,23 @@ impl Database {
                     "copy_count": row.get::<_, i64>(5)?,
                     "created_at": row.get::<_, i64>(6)?,
                     "updated_at": row.get::<_, i64>(7)?,
+                    "sort_order": row.get::<_, i64>(8)?,
                 }))
             })?
             .filter_map(|r| r.ok())
             .collect();
         Ok(rows)
+    }
+
+    pub fn reorder_snippets(&self, ids: &[String]) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        for (i, id) in ids.iter().enumerate() {
+            conn.execute(
+                "UPDATE snippets SET sort_order = ?1 WHERE id = ?2",
+                params![i as i64, id],
+            )?;
+        }
+        Ok(())
     }
 
     pub fn save_known_device(

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import { useSettingsStore } from "@/stores/settings";
 import { isTauri } from "@/utils/platform";
 import {
@@ -12,6 +13,7 @@ import {
   ChevronRight,
 } from "lucide-vue-next";
 
+const { t } = useI18n();
 const settingsStore = useSettingsStore();
 const editName = ref(settingsStore.deviceName);
 const isEditingName = ref(false);
@@ -32,7 +34,7 @@ async function saveName() {
 async function pickDownloadDir() {
   if (!isTauri()) return;
   const { open } = await import("@tauri-apps/plugin-dialog");
-  const dir = await open({ directory: true, title: "\u9009\u62E9\u9ED8\u8BA4\u4E0B\u8F7D\u76EE\u5F55" });
+  const dir = await open({ directory: true, title: t('settings.downloadDir') });
   if (dir) {
     await settingsStore.setDownloadDir(dir as string);
   }
@@ -51,7 +53,7 @@ function toggleTheme() {
 <template>
   <div class="mobile-settings">
     <div class="page-header">
-      <h1 class="page-title">设置</h1>
+      <h1 class="page-title">{{ $t('settings.title') }}</h1>
     </div>
 
     <div class="settings-content">
@@ -60,7 +62,7 @@ function toggleTheme() {
         <div class="settings-row" @click="isEditingName = true">
           <div class="row-icon"><Smartphone :size="18" color="#0d9488" /></div>
           <div class="row-body">
-            <span class="row-label">设备名称</span>
+            <span class="row-label">{{ $t('settings.deviceName') }}</span>
             <div class="row-right">
               <input
                 v-if="isEditingName"
@@ -80,9 +82,9 @@ function toggleTheme() {
         <div class="settings-row" @click="pickDownloadDir">
           <div class="row-icon"><FolderDown :size="18" color="#0d9488" /></div>
           <div class="row-body">
-            <span class="row-label">默认下载目录</span>
+            <span class="row-label">{{ $t('settings.downloadDir') }}</span>
             <div class="row-right">
-              <span class="row-value row-value-path">{{ settingsStore.downloadDir || '未设置' }}</span>
+              <span class="row-value row-value-path">{{ settingsStore.downloadDir || $t('settings.downloadDirNotSet') }}</span>
               <ChevronRight :size="16" color="#c7c7cc" />
             </div>
           </div>
@@ -94,7 +96,7 @@ function toggleTheme() {
         <div class="settings-row" @click="toggleAutoAccept">
           <div class="row-icon"><FileCheck :size="18" color="#0d9488" /></div>
           <div class="row-body">
-            <span class="row-label">自动接收文件</span>
+            <span class="row-label">{{ $t('settings.autoAcceptFile') }}</span>
             <div class="row-right">
               <div :class="['toggle-switch', { on: settingsStore.autoAcceptFiles }]">
                 <div class="toggle-thumb"></div>
@@ -106,7 +108,7 @@ function toggleTheme() {
         <div class="settings-row" @click="toggleTheme">
           <div class="row-icon"><Moon :size="18" color="#0d9488" /></div>
           <div class="row-body">
-            <span class="row-label">暗色主题</span>
+            <span class="row-label">{{ $t('settings.darkTheme') }}</span>
             <div class="row-right">
               <div :class="['toggle-switch', { on: settingsStore.theme === 'dark' }]">
                 <div class="toggle-thumb"></div>
@@ -121,7 +123,7 @@ function toggleTheme() {
         <div class="settings-row">
           <div class="row-icon"><Globe :size="18" color="#0d9488" /></div>
           <div class="row-body">
-            <span class="row-label">语言</span>
+            <span class="row-label">{{ $t('settings.language') }}</span>
             <div class="row-right">
               <span class="row-value">简体中文</span>
               <ChevronRight :size="16" color="#c7c7cc" />
@@ -132,7 +134,7 @@ function toggleTheme() {
         <div class="settings-row">
           <div class="row-icon"><Info :size="18" color="#0d9488" /></div>
           <div class="row-body">
-            <span class="row-label">关于 Peacock</span>
+            <span class="row-label">{{ $t('settings.about') }}</span>
             <div class="row-right">
               <span class="row-value">v0.1.0</span>
               <ChevronRight :size="16" color="#c7c7cc" />
@@ -147,7 +149,7 @@ function toggleTheme() {
 <style scoped>
 .mobile-settings {
   min-height: 100%;
-  background: #f2f2f7;
+  background: var(--color-ios-bg);
 }
 
 .page-header {
@@ -158,7 +160,7 @@ function toggleTheme() {
 .page-title {
   font-size: 30px;
   font-weight: 800;
-  color: #000;
+  color: var(--color-ios-text);
   margin: 0;
   letter-spacing: -0.5px;
 }
@@ -171,7 +173,7 @@ function toggleTheme() {
 }
 
 .settings-group {
-  background: #fff;
+  background: var(--color-ios-card);
   border-radius: 14px;
   overflow: hidden;
 }
@@ -186,11 +188,11 @@ function toggleTheme() {
 }
 
 .settings-row:active {
-  background: #f2f2f7;
+  background: var(--color-ios-bg);
 }
 
 .settings-row + .settings-row {
-  border-top: 0.5px solid #e5e5ea;
+  border-top: 0.5px solid var(--color-ios-separator);
 }
 
 .row-icon {
@@ -216,7 +218,7 @@ function toggleTheme() {
 
 .row-label {
   font-size: 16px;
-  color: #000;
+  color: var(--color-ios-text);
   flex-shrink: 0;
 }
 
@@ -229,7 +231,7 @@ function toggleTheme() {
 
 .row-value {
   font-size: 15px;
-  color: #8e8e93;
+  color: var(--color-ios-text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -243,7 +245,7 @@ function toggleTheme() {
 
 .inline-input {
   font-size: 15px;
-  color: #000;
+  color: var(--color-ios-text);
   border: none;
   outline: none;
   background: transparent;
@@ -257,14 +259,14 @@ function toggleTheme() {
   width: 50px;
   height: 30px;
   border-radius: 15px;
-  background: #e5e5ea;
+  background: var(--color-ios-input-bg);
   position: relative;
   transition: background 0.25s;
   flex-shrink: 0;
 }
 
 .toggle-switch.on {
-  background: #0d9488;
+  background: var(--color-primary);
 }
 
 .toggle-thumb {

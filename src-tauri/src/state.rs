@@ -3,6 +3,11 @@ use crate::protocol::types::MESSAGING_PORT;
 use crate::storage::db::Database;
 use crate::transfer::tracker::TransferManager;
 use std::path::PathBuf;
+use std::sync::Arc;
+use tokio::sync::Semaphore;
+
+/// Maximum concurrent file transfers
+pub const MAX_CONCURRENT_TRANSFERS: usize = 10;
 
 pub struct AppState {
     pub device_id: String,
@@ -16,6 +21,7 @@ pub struct AppState {
     pub db: Database,
     pub data_dir: PathBuf,
     pub download_dir: PathBuf,
+    pub transfer_semaphore: Arc<Semaphore>,
 }
 
 impl AppState {
@@ -74,6 +80,7 @@ impl AppState {
             db,
             data_dir,
             download_dir,
+            transfer_semaphore: Arc::new(Semaphore::new(MAX_CONCURRENT_TRANSFERS)),
         })
     }
 }

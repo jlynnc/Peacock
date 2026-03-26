@@ -15,9 +15,9 @@ const showTabBar = computed(() => {
 });
 
 const tabs = [
-  { name: "mobile-devices", path: "/devices", label: "\u8BBE\u5907", icon: Smartphone },
-  { name: "mobile-snippets", path: "/snippets", label: "\u7247\u6BB5", icon: FileText },
-  { name: "mobile-settings", path: "/settings", label: "\u8BBE\u7F6E", icon: Settings },
+  { name: "mobile-devices", path: "/devices", labelKey: "tabs.devices", icon: Smartphone },
+  { name: "mobile-snippets", path: "/snippets", labelKey: "tabs.snippets", icon: FileText },
+  { name: "mobile-settings", path: "/settings", labelKey: "tabs.settings", icon: Settings },
 ];
 </script>
 
@@ -34,7 +34,7 @@ const tabs = [
         :class="['tab-item', { active: route.name === tab.name }]"
       >
         <component :is="tab.icon" :size="22" />
-        <span class="tab-label">{{ tab.label }}</span>
+        <span class="tab-label">{{ $t(tab.labelKey) }}</span>
       </router-link>
     </nav>
   </div>
@@ -46,7 +46,7 @@ const tabs = [
   flex-direction: column;
   height: 100%;
   width: 100%;
-  background: #f2f2f7;
+  background: var(--color-ios-bg);
   font-family: -apple-system, system-ui, "PingFang SC", "Hiragino Sans GB",
     "Microsoft YaHei", sans-serif;
 }
@@ -62,8 +62,8 @@ const tabs = [
   display: flex;
   align-items: center;
   justify-content: space-around;
-  background: #fff;
-  border-top: 0.5px solid #d1d1d6;
+  background: var(--color-ios-card);
+  border-top: 0.5px solid var(--color-ios-border);
   padding-bottom: env(safe-area-inset-bottom, 0px);
   height: calc(50px + env(safe-area-inset-bottom, 0px));
   flex-shrink: 0;
@@ -77,14 +77,14 @@ const tabs = [
   gap: 2px;
   flex: 1;
   padding: 6px 0 2px;
-  color: #8e8e93;
+  color: var(--color-ios-text-secondary);
   text-decoration: none;
   transition: color 0.2s;
   -webkit-tap-highlight-color: transparent;
 }
 
 .tab-item.active {
-  color: #0d9488;
+  color: var(--color-primary);
 }
 
 .tab-label {

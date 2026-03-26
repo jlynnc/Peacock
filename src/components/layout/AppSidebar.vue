@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import { Settings } from "lucide-vue-next";
 import DeviceList from "@/components/device/DeviceList.vue";
 import SnippetList from "@/components/snippet/SnippetList.vue";
 import { useDeviceStore } from "@/stores/device";
 
+const { t } = useI18n();
+
 const deviceStore = useDeviceStore();
 
-type TabType = "devices" | "snippets";
-const activeTab = ref<TabType>("devices");
+// sidebarTab is in the store so it can be changed from anywhere (e.g. "save to snippet")
 const searchQuery = ref("");
 
 const emit = defineEmits<{
@@ -16,7 +18,7 @@ const emit = defineEmits<{
   "open-settings": [];
 }>();
 
-watch(activeTab, (tab) => {
+watch(() => deviceStore.sidebarTab, (tab) => {
   emit("tab-change", tab);
 });
 
@@ -38,44 +40,44 @@ function getSelfInitial(): string {
     <!-- Tabs -->
     <div class="sidebar-tabs">
       <button
-        :class="['tab-btn', { active: activeTab === 'devices' }]"
-        @click="activeTab = 'devices'"
+        :class="['tab-btn', { active: deviceStore.sidebarTab === 'devices' }]"
+        @click="deviceStore.sidebarTab = 'devices'"
       >
-        设备
+        {{ $t('tabs.devices') }}
       </button>
       <button
-        :class="['tab-btn', { active: activeTab === 'snippets' }]"
-        @click="activeTab = 'snippets'"
+        :class="['tab-btn', { active: deviceStore.sidebarTab === 'snippets' }]"
+        @click="deviceStore.sidebarTab = 'snippets'"
       >
-        片段
+        {{ $t('tabs.snippets') }}
       </button>
     </div>
 
-    <!-- Search -->
-    <div class="sidebar-search">
+    <!-- Search (only for devices tab; snippets has its own) -->
+    <div v-if="deviceStore.sidebarTab === 'devices'" class="sidebar-search">
       <input
         v-model="searchQuery"
         type="text"
         class="search-input"
-        placeholder="搜索..."
+        :placeholder="$t('search.placeholder')"
       />
     </div>
 
     <!-- Content -->
     <div class="sidebar-content">
-      <DeviceList v-if="activeTab === 'devices'" />
-      <SnippetList v-else-if="activeTab === 'snippets'" />
+      <DeviceList v-if="deviceStore.sidebarTab === 'devices'" />
+      <SnippetList v-else-if="deviceStore.sidebarTab === 'snippets'" />
     </div>
 
     <!-- Footer -->
     <div class="sidebar-footer">
       <div class="self-avatar">{{ getSelfInitial() }}</div>
       <span class="self-name">{{
-        deviceStore.selfInfo?.device_name || "未连接"
+        deviceStore.selfInfo?.device_name || t('device.notConnected')
       }}</span>
       <button
         class="settings-btn"
-        title="设置"
+        :title="$t('tabs.settings')"
         @click="emit('open-settings')"
       >
         <Settings :size="16" />
@@ -139,7 +141,7 @@ function getSelfInitial(): string {
   padding: 7px 0;
   text-align: center;
   font-size: 13px;
-  color: #999;
+  color: var(--color-text-secondary);
   border-radius: 6px;
   border: none;
   background: none;
@@ -148,8 +150,8 @@ function getSelfInitial(): string {
 }
 
 .tab-btn:hover {
-  color: #666;
-  background: #f0f0f0;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-input);
 }
 
 .tab-btn.active {
@@ -218,7 +220,7 @@ function getSelfInitial(): string {
 
 .self-name {
   font-size: 12px;
-  color: #666;
+  color: var(--color-text-secondary);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -230,7 +232,7 @@ function getSelfInitial(): string {
   height: 28px;
   border: none;
   background: none;
-  color: #bbb;
+  color: var(--color-text-muted);
   border-radius: 6px;
   cursor: pointer;
   display: flex;
@@ -241,7 +243,7 @@ function getSelfInitial(): string {
 }
 
 .settings-btn:hover {
-  background: #f0f0f0;
-  color: #666;
+  background: var(--color-bg-input);
+  color: var(--color-text-secondary);
 }
 </style>

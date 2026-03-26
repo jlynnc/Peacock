@@ -19,8 +19,8 @@ function handleSelect(deviceId: string) {
       <div class="scanning-icon">
         <Wifi :size="24" color="#bbb" />
       </div>
-      <p class="scanning-text">正在搜索设备...</p>
-      <p class="hint">请确保其他设备在同一局域网</p>
+      <p class="scanning-text">{{ $t('device.searching') }}</p>
+      <p class="hint">{{ $t('device.searchHint') }}</p>
     </div>
     <div v-else class="device-list-container">
       <DeviceItem
@@ -70,13 +70,13 @@ function handleSelect(deviceId: string) {
 
 .scanning-text {
   font-size: 13px;
-  color: #999;
+  color: var(--color-text-secondary);
   margin: 0;
 }
 
 .hint {
   font-size: 12px;
-  color: #ccc;
+  color: var(--color-text-placeholder);
   margin: 0;
 }
 </style>

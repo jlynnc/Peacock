@@ -48,7 +48,7 @@ onMounted(() => {
 <template>
   <div class="mobile-snippet-list">
     <div class="page-header">
-      <h1 class="page-title">片段</h1>
+      <h1 class="page-title">{{ $t('tabs.snippets') }}</h1>
       <button class="add-btn" @click="createNew">
         <Plus :size="22" color="#fff" />
       </button>
@@ -59,14 +59,14 @@ onMounted(() => {
         v-model="searchQuery"
         type="text"
         class="search-input"
-        placeholder="搜索片段..."
+        :placeholder="$t('snippet.searchPlaceholder')"
       />
     </div>
 
     <div v-if="filteredSnippets.length === 0" class="empty-state">
       <FileText :size="40" color="#c7c7cc" />
-      <p class="empty-text">暂无片段</p>
-      <p class="empty-hint">点击右上角 + 新建片段</p>
+      <p class="empty-text">{{ $t('snippet.noSnippets') }}</p>
+      <p class="empty-hint">{{ $t('snippet.newHintMobile') }}</p>
     </div>
 
     <div v-else class="snippet-items">
@@ -92,7 +92,7 @@ onMounted(() => {
 <style scoped>
 .mobile-snippet-list {
   min-height: 100%;
-  background: #f2f2f7;
+  background: var(--color-ios-bg);
 }
 
 .page-header {
@@ -106,7 +106,7 @@ onMounted(() => {
 .page-title {
   font-size: 30px;
   font-weight: 800;
-  color: #000;
+  color: var(--color-ios-text);
   margin: 0;
   letter-spacing: -0.5px;
 }
@@ -115,7 +115,7 @@ onMounted(() => {
   width: 36px;
   height: 36px;
   border: none;
-  background: #0d9488;
+  background: var(--color-primary);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -126,7 +126,7 @@ onMounted(() => {
 }
 
 .add-btn:active {
-  background: #0f766e;
+  background: var(--color-primary-hover);
 }
 
 .search-bar {
@@ -139,14 +139,14 @@ onMounted(() => {
   border: none;
   border-radius: 12px;
   font-size: 16px;
-  background: #e5e5ea;
-  color: #000;
+  background: var(--color-ios-input-bg);
+  color: var(--color-ios-text);
   outline: none;
   -webkit-appearance: none;
 }
 
 .search-input::placeholder {
-  color: #8e8e93;
+  color: var(--color-ios-text-secondary);
 }
 
 .empty-state {
@@ -159,12 +159,12 @@ onMounted(() => {
 
 .empty-text {
   font-size: 15px;
-  color: #8e8e93;
+  color: var(--color-ios-text-secondary);
 }
 
 .empty-hint {
   font-size: 13px;
-  color: #c7c7cc;
+  color: var(--color-ios-text-tertiary);
 }
 
 .snippet-items {
@@ -176,7 +176,7 @@ onMounted(() => {
   align-items: center;
   gap: 13px;
   padding: 14px;
-  background: #fff;
+  background: var(--color-ios-card);
   border-radius: 14px;
   margin-bottom: 8px;
   cursor: pointer;
@@ -185,7 +185,7 @@ onMounted(() => {
 }
 
 .snippet-row:active {
-  background: #f0f0f0;
+  background: var(--color-ios-hover);
 }
 
 .snippet-icon-wrap {
@@ -210,7 +210,7 @@ onMounted(() => {
 .snippet-title {
   font-size: 16px;
   font-weight: 500;
-  color: #000;
+  color: var(--color-ios-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -218,7 +218,7 @@ onMounted(() => {
 
 .snippet-time {
   font-size: 13px;
-  color: #8e8e93;
+  color: var(--color-ios-text-secondary);
 }
 
 .chevron {

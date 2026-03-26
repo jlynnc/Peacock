@@ -5,6 +5,7 @@ import { useDeviceStore } from "@/stores/device";
 import { useChatStore } from "@/stores/chat";
 import { formatPlatform } from "@/utils/format";
 import { isTauri } from "@/utils/platform";
+import { useI18n } from "vue-i18n";
 import { ChevronLeft, Paperclip, FolderOpen, Send } from "lucide-vue-next";
 import ChatBubble from "@/components/chat/ChatBubble.vue";
 
@@ -19,6 +20,7 @@ const messages = computed(() => chatStore.getMessages(deviceId.value));
 
 const inputText = ref("");
 const messageListRef = ref<HTMLElement | null>(null);
+const { t } = useI18n();
 const isSendingFile = ref(false);
 
 watch(
@@ -52,7 +54,7 @@ function handleKeydown(e: KeyboardEvent) {
 async function handleFilePick() {
   if (!isTauri()) return;
   const { open } = await import("@tauri-apps/plugin-dialog");
-  const selected = await open({ multiple: true, title: "\u9009\u62E9\u8981\u53D1\u9001\u7684\u6587\u4EF6" });
+  const selected = await open({ multiple: true, title: t('transfer.selectFile') });
   if (!selected) return;
   const files = Array.isArray(selected) ? selected : [selected];
   isSendingFile.value = true;
@@ -73,7 +75,7 @@ async function handleFilePick() {
 async function handleFolderPick() {
   if (!isTauri()) return;
   const { open } = await import("@tauri-apps/plugin-dialog");
-  const selected = await open({ directory: true, title: "\u9009\u62E9\u8981\u53D1\u9001\u7684\u6587\u4EF6\u5939" });
+  const selected = await open({ directory: true, title: t('transfer.selectFolder') });
   if (!selected) return;
   const folderPath = selected as string;
   isSendingFile.value = true;
@@ -119,7 +121,7 @@ onMounted(() => {
     <!-- Messages -->
     <div ref="messageListRef" class="message-list">
       <div v-if="messages.length === 0" class="no-messages">
-        <p>暂无消息，发送第一条消息吧</p>
+        <p>{{ $t('chat.noMessages') }}</p>
       </div>
       <ChatBubble
         v-for="msg in messages"
@@ -142,7 +144,7 @@ onMounted(() => {
           v-model="inputText"
           class="input-field"
           type="text"
-          placeholder="输入消息..."
+          :placeholder="$t('chat.inputPlaceholderMobile')"
           @keydown="handleKeydown"
         />
         <button
@@ -162,7 +164,7 @@ onMounted(() => {
   flex-direction: column;
   height: 100vh;
   height: 100dvh;
-  background: #f2f2f7;
+  background: var(--color-ios-bg);
 }
 
 .chat-nav {
@@ -170,8 +172,8 @@ onMounted(() => {
   align-items: center;
   padding: 8px 4px;
   padding-top: calc(8px + env(safe-area-inset-top, 0px));
-  background: #fff;
-  border-bottom: 0.5px solid #d1d1d6;
+  background: var(--color-ios-card);
+  border-bottom: 0.5px solid var(--color-ios-border);
   flex-shrink: 0;
   min-height: 44px;
 }
@@ -181,7 +183,7 @@ onMounted(() => {
   height: 44px;
   border: none;
   background: none;
-  color: #0d9488;
+  color: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -201,7 +203,7 @@ onMounted(() => {
 .nav-device-name {
   font-size: 16px;
   font-weight: 600;
-  color: #000;
+  color: var(--color-ios-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -235,7 +237,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  background: #f2f2f7;
+  background: var(--color-ios-bg);
 }
 
 .no-messages {
@@ -243,15 +245,15 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #8e8e93;
+  color: var(--color-ios-text-secondary);
   font-size: 14px;
 }
 
 .input-bar {
   padding: 8px 12px;
   padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
-  background: #fff;
-  border-top: 0.5px solid #d1d1d6;
+  background: var(--color-ios-card);
+  border-top: 0.5px solid var(--color-ios-border);
   flex-shrink: 0;
 }
 
@@ -259,7 +261,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: #f2f2f7;
+  background: var(--color-ios-bg);
   border-radius: 20px;
   padding: 6px 8px;
 }
@@ -269,7 +271,7 @@ onMounted(() => {
   height: 34px;
   border: none;
   background: none;
-  color: #8e8e93;
+  color: var(--color-ios-text-secondary);
   border-radius: 50%;
   cursor: pointer;
   display: flex;
@@ -293,20 +295,20 @@ onMounted(() => {
   outline: none;
   background: transparent;
   font-size: 16px;
-  color: #000;
+  color: var(--color-ios-text);
   padding: 6px 4px;
   -webkit-appearance: none;
 }
 
 .input-field::placeholder {
-  color: #8e8e93;
+  color: var(--color-ios-text-secondary);
 }
 
 .send-btn {
   width: 34px;
   height: 34px;
   border: none;
-  background: #d1d1d6;
+  background: var(--color-ios-border);
   color: #fff;
   border-radius: 50%;
   cursor: pointer;
@@ -319,6 +321,6 @@ onMounted(() => {
 }
 
 .send-btn.active {
-  background: #0d9488;
+  background: var(--color-primary);
 }
 </style>
