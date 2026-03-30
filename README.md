@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="src-tauri/icons/icon.png" width="80" />
+  <img src="src-tauri/icons/icon_256.png" width="80" />
 </p>
 
 <h1 align="center">Peacock</h1>
