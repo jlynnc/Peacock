@@ -254,37 +254,42 @@ function onMouseDown(index: number, e: MouseEvent) {
   document.addEventListener("mouseup", onMouseUp);
 }
 
-// ── Touch drag for mobile (long press to start) ──
+// ── Touch: two-phase approach for iOS ──
+// Phase 1 (before 500ms): early movement → cancel, allow native scroll
+// Phase 2 (after 500ms):  long-press activated → movement = drag, release = menu
 let touchTimer: ReturnType<typeof setTimeout> | null = null;
 let touchStartY = 0;
-
-// ── Touch: long press = context menu, press+drag = reorder ──
-
-// touchSnippetId tracked via menuSnippetId in long-press handler
-let touchItemEl: HTMLElement | null = null;
 let touchStartX = 0;
+let touchItemEl: HTMLElement | null = null;
+let longPressActivated = false;
 
-function handleTouchMove(e: TouchEvent) {
+// Phase 1: detect early movement to cancel long-press (passive, doesn't block scroll)
+function handleEarlyMove(e: TouchEvent) {
   const touch = e.touches[0];
   const dx = Math.abs(touch.clientX - touchStartX);
   const dy = Math.abs(touch.clientY - touchStartY);
-
-  // If moved significantly, cancel long-press (context menu) and start drag
   if (dx > 10 || dy > 10) {
+    // User is scrolling — cancel long press, let native scroll happen
     if (touchTimer) {
       clearTimeout(touchTimer);
       touchTimer = null;
     }
+    document.removeEventListener("touchmove", handleEarlyMove);
+  }
+}
 
-    // Start drag if not already dragging
-    if (!isDragging.value && touchItemEl) {
-      isDragging.value = true;
-      createGhost(touchItemEl, touch.clientX, touch.clientY);
-    }
+// Phase 2: drag reorder after long-press activated (non-passive, can preventDefault)
+function handleDragMove(e: TouchEvent) {
+  if (!longPressActivated) return;
+  const touch = e.touches[0];
+  e.preventDefault(); // prevent scroll — we're in drag mode
+
+  if (!isDragging.value && touchItemEl) {
+    isDragging.value = true;
+    createGhost(touchItemEl, touch.clientX, touch.clientY);
   }
 
   if (!isDragging.value) return;
-  e.preventDefault();
   moveGhost(touch.clientY);
 
   const listBody = listBodyRef.value;
@@ -312,31 +317,49 @@ function onTouchStart(index: number, snippetId: string, e: TouchEvent) {
   touchStartY = touch.clientY;
   touchStartX = touch.clientX;
   touchItemEl = e.currentTarget as HTMLElement;
-  // snippetId stored via menuSnippetId in the timeout callback
   dragIndex.value = index;
+  longPressActivated = false;
 
-  // Long press without moving = context menu
+  // Phase 1: passive listener to detect early scroll movement
+  document.addEventListener("touchmove", handleEarlyMove, { passive: true });
+
+  // After 500ms hold without moving → long-press activated
   touchTimer = setTimeout(() => {
     touchTimer = null;
-    if (!isDragging.value) {
-      // Show context menu
-      store.selectedId = snippetId;
-      menuSnippetId.value = snippetId;
-      menuPos.value = { x: touch.clientX, y: touch.clientY };
-      showMenu.value = true;
+    longPressActivated = true;
+    // Remove early-move detector
+    document.removeEventListener("touchmove", handleEarlyMove);
+    // Add non-passive drag listener — now movement = drag reorder
+    document.addEventListener("touchmove", handleDragMove, { passive: false });
+    // Visual feedback: highlight the item
+    if (touchItemEl) {
+      touchItemEl.style.opacity = "0.6";
     }
+    store.selectedId = snippetId;
+    menuSnippetId.value = snippetId;
   }, 500);
-
-  document.addEventListener("touchmove", handleTouchMove, { passive: false });
 }
 
 async function onTouchEnd() {
+  // Clean up all listeners
+  document.removeEventListener("touchmove", handleEarlyMove);
+  document.removeEventListener("touchmove", handleDragMove);
+
   if (touchTimer) {
     clearTimeout(touchTimer);
     touchTimer = null;
   }
-  document.removeEventListener("touchmove", handleTouchMove);
-  removeGhost();
+
+  // Restore opacity
+  if (touchItemEl) {
+    touchItemEl.style.opacity = "";
+  }
+
+  if (longPressActivated && !isDragging.value) {
+    // Long press without drag → show context menu
+    menuPos.value = { x: touchStartX, y: touchStartY };
+    showMenu.value = true;
+  }
 
   if (isDragging.value && dragIndex.value !== null && dragOverIndex.value !== null && dragIndex.value !== dragOverIndex.value) {
     const items = [...store.filteredSnippets];
@@ -355,10 +378,17 @@ async function onTouchEnd() {
     }
   }
 
+  removeGhost();
   dragIndex.value = null;
   dragOverIndex.value = null;
   isDragging.value = false;
+  longPressActivated = false;
   touchItemEl = null;
+}
+
+function onTouchCancel() {
+  // iOS may fire touchcancel instead of touchend — clean up identically
+  onTouchEnd();
 }
 
 function formatTime(ts: number) {
@@ -392,8 +422,9 @@ function formatTime(ts: number) {
           { dragging: dragIndex === idx && isDragging },
         ]"
         @mousedown="onMouseDown(idx, $event)"
-        @touchstart.passive="onTouchStart(idx, s.id, $event)"
-        @touchend.passive="onTouchEnd"
+        @touchstart="onTouchStart(idx, s.id, $event)"
+        @touchend="onTouchEnd"
+        @touchcancel="onTouchCancel"
         @click="store.selectedId = s.id"
         @dblclick.stop="store.renamingId = s.id"
         @contextmenu="onContextMenu($event, s.id)"
@@ -507,6 +538,10 @@ function formatTime(ts: number) {
   margin: 0 4px;
   transition: background 0.15s;
   border: 2px solid transparent;
+  /* Prevent iOS native long-press callout and text selection during touch */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .snippet-item:hover {
   background: var(--color-bg-input);
