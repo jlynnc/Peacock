@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
+import { useRouter } from "vue-router";
 import type { ChatMessage } from "@/types/message";
 import { formatTime } from "@/utils/format";
 import { useSnippetStore } from "@/stores/snippet";
 import { useDeviceStore } from "@/stores/device";
+import { isMobile } from "@/utils/platform";
 import ChatFileCard from "./ChatFileCard.vue";
 import ChatSnippetCard from "./ChatSnippetCard.vue";
+
+const router = useRouter();
 
 const props = defineProps<{
   message: ChatMessage;
@@ -114,9 +118,13 @@ async function saveToSnippet() {
     });
   }
 
-  // Switch to snippets tab
-  deviceStore.sidebarTab = "snippets";
-  deviceStore.selectedDeviceId = null;
+  // Switch to snippets view
+  if (isMobile()) {
+    router.push({ name: "mobile-snippet-edit", params: { id: snippetStore.selectedId } });
+  } else {
+    deviceStore.sidebarTab = "snippets";
+    deviceStore.selectedDeviceId = null;
+  }
 }
 
 /** Open links in default browser */

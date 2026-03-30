@@ -107,7 +107,6 @@ function goBack() {
 }
 
 onMounted(() => {
-  chatStore.loadHistory(deviceId.value);
   chatStore.markAsRead(deviceId.value);
   scrollToBottom();
 });
