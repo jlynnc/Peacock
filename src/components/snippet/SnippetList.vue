@@ -254,6 +254,85 @@ function onMouseDown(index: number, e: MouseEvent) {
   document.addEventListener("mouseup", onMouseUp);
 }
 
+// ── Touch drag for mobile (long press to start) ──
+let touchTimer: ReturnType<typeof setTimeout> | null = null;
+let touchStartY = 0;
+
+function onTouchStart(index: number, e: TouchEvent) {
+  if ((e.target as HTMLElement).tagName === "INPUT") return;
+  const touch = e.touches[0];
+  touchStartY = touch.clientY;
+  const itemEl = e.currentTarget as HTMLElement;
+
+  // Long press to initiate drag
+  touchTimer = setTimeout(() => {
+    dragIndex.value = index;
+    isDragging.value = true;
+    createGhost(itemEl, touch.clientX, touch.clientY);
+  }, 400);
+}
+
+function onTouchMove(e: TouchEvent) {
+  const touch = e.touches[0];
+
+  // Cancel long-press if moved too much before drag started
+  if (touchTimer && Math.abs(touch.clientY - touchStartY) > 10) {
+    clearTimeout(touchTimer);
+    touchTimer = null;
+  }
+
+  if (!isDragging.value) return;
+  e.preventDefault();
+  moveGhost(touch.clientY);
+
+  const listBody = listBodyRef.value;
+  if (!listBody) return;
+  const items = listBody.querySelectorAll(".snippet-item");
+  let hoverIdx: number | null = null;
+  for (let i = 0; i < items.length; i++) {
+    const rect = items[i].getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+    if (touch.clientY < midY) {
+      hoverIdx = i;
+      break;
+    }
+    hoverIdx = i + 1;
+  }
+  if (hoverIdx !== null && hoverIdx > store.filteredSnippets.length) {
+    hoverIdx = store.filteredSnippets.length;
+  }
+  dragOverIndex.value = hoverIdx;
+}
+
+async function onTouchEnd() {
+  if (touchTimer) {
+    clearTimeout(touchTimer);
+    touchTimer = null;
+  }
+  removeGhost();
+
+  if (isDragging.value && dragIndex.value !== null && dragOverIndex.value !== null && dragIndex.value !== dragOverIndex.value) {
+    const items = [...store.filteredSnippets];
+    const [moved] = items.splice(dragIndex.value, 1);
+    const targetIdx = dragOverIndex.value > dragIndex.value ? dragOverIndex.value - 1 : dragOverIndex.value;
+    items.splice(targetIdx, 0, moved);
+
+    const ids = items.map((s) => s.id);
+    if (isTauri()) {
+      try {
+        await invoke("reorder_snippets", { ids });
+        await store.loadSnippets();
+      } catch (e) {
+        console.error("Failed to reorder snippets:", e);
+      }
+    }
+  }
+
+  dragIndex.value = null;
+  dragOverIndex.value = null;
+  isDragging.value = false;
+}
+
 function formatTime(ts: number) {
   const d = new Date(ts * 1000);
   const m = d.getMonth() + 1;
@@ -285,6 +364,9 @@ function formatTime(ts: number) {
           { dragging: dragIndex === idx && isDragging },
         ]"
         @mousedown="onMouseDown(idx, $event)"
+        @touchstart="onTouchStart(idx, $event)"
+        @touchmove="onTouchMove"
+        @touchend="onTouchEnd"
         @click="store.selectedId = s.id"
         @dblclick.stop="store.renamingId = s.id"
         @contextmenu="onContextMenu($event, s.id)"

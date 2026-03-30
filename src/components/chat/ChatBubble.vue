@@ -16,25 +16,21 @@ const avatarEmoji = computed(() => "💻");
 const snippetStore = useSnippetStore();
 const deviceStore = useDeviceStore();
 
-// ── Right-click context menu (global singleton) ──
+// ── Context menu (right-click on desktop, long-press on mobile) ──
 const showContextMenu = ref(false);
 const menuX = ref(0);
 const menuY = ref(0);
+let longPressTimer: ReturnType<typeof setTimeout> | null = null;
 
-// Close any previously open context menu
 function closeAllMenus() {
   document.dispatchEvent(new CustomEvent("peacock-close-context-menu"));
 }
 
-function onRightClick(e: MouseEvent) {
+function showMenu(x: number, y: number, el: HTMLElement) {
   if (props.message.msg_type !== "text") return;
-  e.preventDefault();
-
-  // Close any other open menu first
   closeAllMenus();
 
-  // Select all text in the bubble
-  const bubbleEl = (e.currentTarget as HTMLElement).querySelector(".bubble-content");
+  const bubbleEl = el.querySelector(".bubble-content");
   if (bubbleEl) {
     const range = document.createRange();
     range.selectNodeContents(bubbleEl);
@@ -43,20 +39,50 @@ function onRightClick(e: MouseEvent) {
     sel?.addRange(range);
   }
 
-  menuX.value = e.clientX;
-  menuY.value = e.clientY;
+  menuX.value = x;
+  menuY.value = y;
   showContextMenu.value = true;
 
-  // Auto-hide on click elsewhere or another menu opening
   const hide = () => {
     showContextMenu.value = false;
     document.removeEventListener("click", hide);
+    document.removeEventListener("touchstart", hide);
     document.removeEventListener("peacock-close-context-menu", hide);
   };
   setTimeout(() => {
     document.addEventListener("click", hide);
+    document.addEventListener("touchstart", hide);
     document.addEventListener("peacock-close-context-menu", hide);
   }, 0);
+}
+
+function onRightClick(e: MouseEvent) {
+  e.preventDefault();
+  showMenu(e.clientX, e.clientY, e.currentTarget as HTMLElement);
+}
+
+// Long press for mobile
+function onTouchStart(e: TouchEvent) {
+  if (props.message.msg_type !== "text") return;
+  const touch = e.touches[0];
+  const target = e.currentTarget as HTMLElement;
+  longPressTimer = setTimeout(() => {
+    showMenu(touch.clientX, touch.clientY, target);
+  }, 500);
+}
+
+function onTouchEnd() {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  }
+}
+
+function onTouchMove() {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  }
 }
 
 async function copyText() {
@@ -139,6 +165,9 @@ const linkedContent = computed(() => {
         v-if="message.msg_type === 'text'"
         :class="['bubble', message.direction]"
         @contextmenu="onRightClick"
+        @touchstart.passive="onTouchStart"
+        @touchend.passive="onTouchEnd"
+        @touchmove.passive="onTouchMove"
       >
         <div class="bubble-content" v-html="linkedContent" @click="handleLinkClick"></div>
       </div>
