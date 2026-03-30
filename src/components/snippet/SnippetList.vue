@@ -91,10 +91,7 @@ async function menuCopyContent() {
 
 function menuShare() {
   showMenu.value = false;
-  // Delay to avoid the same click event hitting the picker overlay
-  requestAnimationFrame(() => {
-    showDevicePicker.value = true;
-  });
+  showDevicePicker.value = true;
 }
 
 async function handleShareConfirm(deviceIds: string[]) {
@@ -257,42 +254,20 @@ function onMouseDown(index: number, e: MouseEvent) {
   document.addEventListener("mouseup", onMouseUp);
 }
 
-// ── Touch: two-phase approach for iOS ──
-// Phase 1 (before 500ms): early movement → cancel, allow native scroll
-// Phase 2 (after 500ms):  long-press activated → movement = drag, release = menu
+// ── Touch drag for mobile (long press to start) ──
 let touchTimer: ReturnType<typeof setTimeout> | null = null;
 let touchStartY = 0;
-let touchStartX = 0;
-let touchItemEl: HTMLElement | null = null;
-let longPressActivated = false;
 
-// Phase 1: detect early movement to cancel long-press (passive, doesn't block scroll)
-function handleEarlyMove(e: TouchEvent) {
+function handleTouchMove(e: TouchEvent) {
   const touch = e.touches[0];
-  const dx = Math.abs(touch.clientX - touchStartX);
-  const dy = Math.abs(touch.clientY - touchStartY);
-  if (dx > 10 || dy > 10) {
-    // User is scrolling — cancel long press, let native scroll happen
-    if (touchTimer) {
-      clearTimeout(touchTimer);
-      touchTimer = null;
-    }
-    document.removeEventListener("touchmove", handleEarlyMove);
-  }
-}
 
-// Phase 2: drag reorder after long-press activated (non-passive, can preventDefault)
-function handleDragMove(e: TouchEvent) {
-  if (!longPressActivated) return;
-  const touch = e.touches[0];
-  e.preventDefault(); // prevent scroll — we're in drag mode
-
-  if (!isDragging.value && touchItemEl) {
-    isDragging.value = true;
-    createGhost(touchItemEl, touch.clientX, touch.clientY);
+  if (touchTimer && Math.abs(touch.clientY - touchStartY) > 10) {
+    clearTimeout(touchTimer);
+    touchTimer = null;
   }
 
   if (!isDragging.value) return;
+  e.preventDefault(); // Works because we add with { passive: false }
   moveGhost(touch.clientY);
 
   const listBody = listBodyRef.value;
@@ -314,55 +289,29 @@ function handleDragMove(e: TouchEvent) {
   dragOverIndex.value = hoverIdx;
 }
 
-function onTouchStart(index: number, snippetId: string, e: TouchEvent) {
+function onTouchStart(index: number, e: TouchEvent) {
   if ((e.target as HTMLElement).tagName === "INPUT") return;
   const touch = e.touches[0];
   touchStartY = touch.clientY;
-  touchStartX = touch.clientX;
-  touchItemEl = e.currentTarget as HTMLElement;
-  dragIndex.value = index;
-  longPressActivated = false;
+  const itemEl = e.currentTarget as HTMLElement;
 
-  // Phase 1: passive listener to detect early scroll movement
-  document.addEventListener("touchmove", handleEarlyMove, { passive: true });
-
-  // After 500ms hold without moving → long-press activated
+  // Long press to initiate drag
   touchTimer = setTimeout(() => {
-    touchTimer = null;
-    longPressActivated = true;
-    // Remove early-move detector
-    document.removeEventListener("touchmove", handleEarlyMove);
-    // Add non-passive drag listener — now movement = drag reorder
-    document.addEventListener("touchmove", handleDragMove, { passive: false });
-    // Visual feedback: highlight the item
-    if (touchItemEl) {
-      touchItemEl.style.opacity = "0.6";
-    }
-    store.selectedId = snippetId;
-    menuSnippetId.value = snippetId;
-  }, 500);
+    dragIndex.value = index;
+    isDragging.value = true;
+    createGhost(itemEl, touch.clientX, touch.clientY);
+    // Add non-passive touchmove to allow preventDefault during drag
+    document.addEventListener("touchmove", handleTouchMove, { passive: false });
+  }, 400);
 }
 
 async function onTouchEnd() {
-  // Clean up all listeners
-  document.removeEventListener("touchmove", handleEarlyMove);
-  document.removeEventListener("touchmove", handleDragMove);
-
   if (touchTimer) {
     clearTimeout(touchTimer);
     touchTimer = null;
   }
-
-  // Restore opacity
-  if (touchItemEl) {
-    touchItemEl.style.opacity = "";
-  }
-
-  if (longPressActivated && !isDragging.value) {
-    // Long press without drag → show context menu
-    menuPos.value = { x: touchStartX, y: touchStartY };
-    showMenu.value = true;
-  }
+  document.removeEventListener("touchmove", handleTouchMove);
+  removeGhost();
 
   if (isDragging.value && dragIndex.value !== null && dragOverIndex.value !== null && dragIndex.value !== dragOverIndex.value) {
     const items = [...store.filteredSnippets];
@@ -381,17 +330,9 @@ async function onTouchEnd() {
     }
   }
 
-  removeGhost();
   dragIndex.value = null;
   dragOverIndex.value = null;
   isDragging.value = false;
-  longPressActivated = false;
-  touchItemEl = null;
-}
-
-function onTouchCancel() {
-  // iOS may fire touchcancel instead of touchend — clean up identically
-  onTouchEnd();
 }
 
 function formatTime(ts: number) {
@@ -425,9 +366,8 @@ function formatTime(ts: number) {
           { dragging: dragIndex === idx && isDragging },
         ]"
         @mousedown="onMouseDown(idx, $event)"
-        @touchstart="onTouchStart(idx, s.id, $event)"
-        @touchend="onTouchEnd"
-        @touchcancel="onTouchCancel"
+        @touchstart.passive="onTouchStart(idx, $event)"
+        @touchend.passive="onTouchEnd"
         @click="store.selectedId = s.id"
         @dblclick.stop="store.renamingId = s.id"
         @contextmenu="onContextMenu($event, s.id)"
@@ -456,22 +396,20 @@ function formatTime(ts: number) {
       <button class="btn-new" @click="store.createNew()">{{ $t('snippet.newBtn') }}</button>
     </div>
 
-    <!-- Right-click / long-press context menu -->
+    <!-- Right-click context menu -->
     <Teleport to="body">
-      <div v-if="showMenu" class="context-overlay" @pointerdown="closeMenu"></div>
       <div
         v-if="showMenu"
         class="context-menu"
         :style="{ left: menuPos.x + 'px', top: menuPos.y + 'px' }"
         @click.stop
-        @touchstart.stop
       >
-        <div class="context-item" @pointerdown.stop="menuRename">✏️ {{ $t('snippet.rename') || '重命名' }}</div>
-        <div class="context-item" @pointerdown.stop="menuCopyContent">📋 {{ $t('snippet.copyContent') }}</div>
-        <div class="context-item" @pointerdown.stop="menuShare">📤 {{ $t('snippet.share') }}</div>
-        <div class="context-item" @pointerdown.stop="menuPinTop">📌 {{ $t('snippet.pinTop') || '置顶' }}</div>
+        <div class="context-item" @click="menuRename">✏️ {{ $t('snippet.rename') || '重命名' }}</div>
+        <div class="context-item" @click="menuCopyContent">📋 {{ $t('snippet.copyContent') }}</div>
+        <div class="context-item" @click="menuShare">📤 {{ $t('snippet.share') }}</div>
+        <div class="context-item" @click="menuPinTop">📌 {{ $t('snippet.pinTop') || '置顶' }}</div>
         <div class="context-sep"></div>
-        <div class="context-item context-danger" @pointerdown.stop="menuDelete">🗑️ {{ $t('common.delete') }}</div>
+        <div class="context-item context-danger" @click="menuDelete">🗑️ {{ $t('common.delete') }}</div>
       </div>
     </Teleport>
 
@@ -541,10 +479,6 @@ function formatTime(ts: number) {
   margin: 0 4px;
   transition: background 0.15s;
   border: 2px solid transparent;
-  /* Prevent iOS native long-press callout and text selection during touch */
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  user-select: none;
 }
 .snippet-item:hover {
   background: var(--color-bg-input);
@@ -615,12 +549,6 @@ function formatTime(ts: number) {
 }
 
 /* Context menu */
-.context-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 998;
-}
-
 .context-menu {
   position: fixed;
   z-index: 100;
