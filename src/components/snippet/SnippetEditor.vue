@@ -1,13 +1,44 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch, onMounted, onUnmounted } from "vue";
 import { useSnippetStore } from "@/stores/snippet";
 import { useChatStore } from "@/stores/chat";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { ClipboardList } from "lucide-vue-next";
 import DevicePickerDialog from "@/components/common/DevicePickerDialog.vue";
+import { isMobile } from "@/utils/platform";
 
 const store = useSnippetStore();
 const chatStore = useChatStore();
+
+// Mobile: floating "Mark" button when text is selected
+const showFloatingMark = ref(false);
+const floatingMarkPos = ref({ x: 0, y: 0 });
+
+function onSelectionChange() {
+  if (!isMobile()) return;
+  const sel = window.getSelection();
+  if (sel && sel.toString().length > 0 && contentEditable.value?.contains(sel.anchorNode)) {
+    const range = sel.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    floatingMarkPos.value = { x: rect.left + rect.width / 2, y: rect.top - 40 };
+    showFloatingMark.value = true;
+  } else {
+    showFloatingMark.value = false;
+  }
+}
+
+function floatingMarkQuickCopy() {
+  markAsQuickCopy();
+  showFloatingMark.value = false;
+}
+
+onMounted(() => {
+  document.addEventListener("selectionchange", onSelectionChange);
+});
+
+onUnmounted(() => {
+  document.removeEventListener("selectionchange", onSelectionChange);
+});
 const contentEditable = ref<HTMLDivElement | null>(null);
 const showContentMenu = ref(false);
 const contentMenuPos = ref({ x: 0, y: 0 });
@@ -350,6 +381,16 @@ function formatDateTime(ts: number) {
         <div v-if="contextMenuType === 'chip'" class="context-item" @click="unmarkQuickCopy">✖ {{ $t('snippet.unmarkQuickCopy') || '取消标记' }}</div>
       </div>
       <div v-if="showContentMenu" class="context-overlay" @click="showContentMenu = false"></div>
+
+      <!-- Mobile: floating "Mark" button on text selection -->
+      <div
+        v-if="showFloatingMark"
+        class="floating-mark-btn"
+        :style="{ left: floatingMarkPos.x + 'px', top: floatingMarkPos.y + 'px' }"
+        @pointerdown.stop.prevent="floatingMarkQuickCopy"
+      >
+        📌
+      </div>
     </div>
 
     <!-- Note -->
@@ -547,6 +588,21 @@ function formatDateTime(ts: number) {
 }
 .context-item:hover {
   background: var(--color-bg-input);
+}
+
+/* Mobile floating mark button */
+.floating-mark-btn {
+  position: fixed;
+  transform: translateX(-50%);
+  background: var(--color-primary);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  z-index: 100;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .note-area {

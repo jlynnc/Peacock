@@ -258,16 +258,33 @@ function onMouseDown(index: number, e: MouseEvent) {
 let touchTimer: ReturnType<typeof setTimeout> | null = null;
 let touchStartY = 0;
 
+// ── Touch: long press = context menu, press+drag = reorder ──
+
+// touchSnippetId tracked via menuSnippetId in long-press handler
+let touchItemEl: HTMLElement | null = null;
+let touchStartX = 0;
+
 function handleTouchMove(e: TouchEvent) {
   const touch = e.touches[0];
+  const dx = Math.abs(touch.clientX - touchStartX);
+  const dy = Math.abs(touch.clientY - touchStartY);
 
-  if (touchTimer && Math.abs(touch.clientY - touchStartY) > 10) {
-    clearTimeout(touchTimer);
-    touchTimer = null;
+  // If moved significantly, cancel long-press (context menu) and start drag
+  if (dx > 10 || dy > 10) {
+    if (touchTimer) {
+      clearTimeout(touchTimer);
+      touchTimer = null;
+    }
+
+    // Start drag if not already dragging
+    if (!isDragging.value && touchItemEl) {
+      isDragging.value = true;
+      createGhost(touchItemEl, touch.clientX, touch.clientY);
+    }
   }
 
   if (!isDragging.value) return;
-  e.preventDefault(); // Works because we add with { passive: false }
+  e.preventDefault();
   moveGhost(touch.clientY);
 
   const listBody = listBodyRef.value;
@@ -289,20 +306,28 @@ function handleTouchMove(e: TouchEvent) {
   dragOverIndex.value = hoverIdx;
 }
 
-function onTouchStart(index: number, e: TouchEvent) {
+function onTouchStart(index: number, snippetId: string, e: TouchEvent) {
   if ((e.target as HTMLElement).tagName === "INPUT") return;
   const touch = e.touches[0];
   touchStartY = touch.clientY;
-  const itemEl = e.currentTarget as HTMLElement;
+  touchStartX = touch.clientX;
+  touchItemEl = e.currentTarget as HTMLElement;
+  // snippetId stored via menuSnippetId in the timeout callback
+  dragIndex.value = index;
 
-  // Long press to initiate drag
+  // Long press without moving = context menu
   touchTimer = setTimeout(() => {
-    dragIndex.value = index;
-    isDragging.value = true;
-    createGhost(itemEl, touch.clientX, touch.clientY);
-    // Add non-passive touchmove to allow preventDefault during drag
-    document.addEventListener("touchmove", handleTouchMove, { passive: false });
-  }, 400);
+    touchTimer = null;
+    if (!isDragging.value) {
+      // Show context menu
+      store.selectedId = snippetId;
+      menuSnippetId.value = snippetId;
+      menuPos.value = { x: touch.clientX, y: touch.clientY };
+      showMenu.value = true;
+    }
+  }, 500);
+
+  document.addEventListener("touchmove", handleTouchMove, { passive: false });
 }
 
 async function onTouchEnd() {
@@ -333,6 +358,7 @@ async function onTouchEnd() {
   dragIndex.value = null;
   dragOverIndex.value = null;
   isDragging.value = false;
+  touchItemEl = null;
 }
 
 function formatTime(ts: number) {
@@ -366,7 +392,7 @@ function formatTime(ts: number) {
           { dragging: dragIndex === idx && isDragging },
         ]"
         @mousedown="onMouseDown(idx, $event)"
-        @touchstart.passive="onTouchStart(idx, $event)"
+        @touchstart.passive="onTouchStart(idx, s.id, $event)"
         @touchend.passive="onTouchEnd"
         @click="store.selectedId = s.id"
         @dblclick.stop="store.renamingId = s.id"
@@ -396,20 +422,22 @@ function formatTime(ts: number) {
       <button class="btn-new" @click="store.createNew()">{{ $t('snippet.newBtn') }}</button>
     </div>
 
-    <!-- Right-click context menu -->
+    <!-- Right-click / long-press context menu -->
     <Teleport to="body">
+      <div v-if="showMenu" class="context-overlay" @pointerdown="closeMenu"></div>
       <div
         v-if="showMenu"
         class="context-menu"
         :style="{ left: menuPos.x + 'px', top: menuPos.y + 'px' }"
         @click.stop
+        @touchstart.stop
       >
-        <div class="context-item" @click="menuRename">✏️ {{ $t('snippet.rename') || '重命名' }}</div>
-        <div class="context-item" @click="menuCopyContent">📋 {{ $t('snippet.copyContent') }}</div>
-        <div class="context-item" @click="menuShare">📤 {{ $t('snippet.share') }}</div>
-        <div class="context-item" @click="menuPinTop">📌 {{ $t('snippet.pinTop') || '置顶' }}</div>
+        <div class="context-item" @pointerdown.stop="menuRename">✏️ {{ $t('snippet.rename') || '重命名' }}</div>
+        <div class="context-item" @pointerdown.stop="menuCopyContent">📋 {{ $t('snippet.copyContent') }}</div>
+        <div class="context-item" @pointerdown.stop="menuShare">📤 {{ $t('snippet.share') }}</div>
+        <div class="context-item" @pointerdown.stop="menuPinTop">📌 {{ $t('snippet.pinTop') || '置顶' }}</div>
         <div class="context-sep"></div>
-        <div class="context-item context-danger" @click="menuDelete">🗑️ {{ $t('common.delete') }}</div>
+        <div class="context-item context-danger" @pointerdown.stop="menuDelete">🗑️ {{ $t('common.delete') }}</div>
       </div>
     </Teleport>
 
@@ -549,6 +577,12 @@ function formatTime(ts: number) {
 }
 
 /* Context menu */
+.context-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 998;
+}
+
 .context-menu {
   position: fixed;
   z-index: 100;
