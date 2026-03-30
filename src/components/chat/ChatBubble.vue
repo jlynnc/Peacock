@@ -47,17 +47,19 @@ function showMenu(x: number, y: number, el: HTMLElement) {
   menuY.value = y;
   showContextMenu.value = true;
 
-  const hide = () => {
+  const hide = (e?: Event) => {
+    // Don't hide if clicking on a menu item (let the item's handler run first)
+    if (e?.target && (e.target as HTMLElement).closest?.(".context-menu")) return;
     showContextMenu.value = false;
     document.removeEventListener("click", hide);
-    document.removeEventListener("touchstart", hide);
+    document.removeEventListener("touchend", hide);
     document.removeEventListener("peacock-close-context-menu", hide);
   };
   setTimeout(() => {
     document.addEventListener("click", hide);
-    document.addEventListener("touchstart", hide);
+    document.addEventListener("touchend", hide);
     document.addEventListener("peacock-close-context-menu", hide);
-  }, 0);
+  }, 100);
 }
 
 function onRightClick(e: MouseEvent) {
@@ -213,8 +215,8 @@ const linkedContent = computed(() => {
         class="context-menu"
         :style="{ left: menuX + 'px', top: menuY + 'px' }"
       >
-        <div class="context-menu-item" @click="copyText">{{ $t('snippet.copy') || '复制' }}</div>
-        <div class="context-menu-item" @click="saveToSnippet">{{ $t('chat.saveToSnippet') || '保存到片段' }}</div>
+        <div class="context-menu-item" @pointerdown.stop="copyText">{{ $t('snippet.copy') || '复制' }}</div>
+        <div class="context-menu-item" @pointerdown.stop="saveToSnippet">{{ $t('chat.saveToSnippet') || '保存到片段' }}</div>
       </div>
     </Teleport>
   </div>
