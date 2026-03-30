@@ -5,8 +5,12 @@
 <h1 align="center">Peacock</h1>
 
 <p align="center">
-  跨平台局域网文件与消息传输工具<br/>
-  <em>Cross-platform LAN file & message transfer</em>
+  Cross-platform LAN file & message transfer tool<br/>
+  No server, no internet, no account — just connect and send.
+</p>
+
+<p align="center">
+  <a href="README_zh.md">简体中文</a> | <strong>English</strong>
 </p>
 
 <p align="center">
@@ -19,24 +23,40 @@
 
 ---
 
-## Screenshots / 截图
+## Screenshots
 
-<!-- 替换为实际截图路径 / Replace with actual screenshot paths -->
+<!-- Replace with actual screenshot paths after capturing -->
 
-| 设备发现 Devices | 即时聊天 Chat | 文件传输 Transfer | 片段 Snippets |
+| Devices | Chat | File Transfer | Snippets |
 |:---:|:---:|:---:|:---:|
 | ![devices](docs/screenshots/devices.png) | ![chat](docs/screenshots/chat.png) | ![transfer](docs/screenshots/transfer.png) | ![snippets](docs/screenshots/snippets.png) |
 
-## Features / 功能
+## Highlights
 
-- **设备发现 / Device Discovery** — 自动发现同一局域网内的设备，无需手动配置
-- **即时消息 / Instant Messaging** — 设备间实时文字聊天，消息持久化存储
-- **文件传输 / File Transfer** — 拖拽发送文件和文件夹，支持断点续传、进度显示
-- **片段管理 / Snippets** — 创建、编辑、搜索文本片段，一键分享到其他设备
-- **双语界面 / Bilingual UI** — 中文 / English 自动切换
-- **暗色主题 / Dark Theme** — 跟随系统 / 手动切换
+### Quick Copy — Select, Mark, Done
 
-## Tech Stack / 技术栈
+The standout feature of Peacock. When editing a snippet, simply select any text and tap the floating **mark button** to instantly save it as a reusable snippet. No copy-paste, no switching apps — just select and mark.
+
+<!-- Replace with actual screenshot -->
+<p align="center">
+  <img src="docs/screenshots/quick-copy.png" width="300" />
+  <br/>
+  <em>Select text → Tap the floating mark → Saved as snippet</em>
+</p>
+
+Perfect for collecting API keys, code fragments, meeting notes, or any text you need across devices.
+
+## Features
+
+- **Auto Discovery** — Devices on the same LAN are found automatically, zero configuration
+- **Instant Messaging** — Real-time text chat between devices with persistent history
+- **File Transfer** — Drag & drop files and folders, with resume support and progress tracking
+- **Snippets** — Create, edit, search, and share text snippets across devices
+- **Quick Copy** — Select any text in a snippet and mark it for instant reuse
+- **Bilingual UI** — Chinese / English, auto-detected from system
+- **Dark Theme** — Follow system or switch manually
+
+## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
@@ -46,45 +66,45 @@
 | Protocol | Custom binary (32-byte header, bincode) |
 | Icons | Lucide |
 
-## Network Architecture / 网络架构
+## How It Works
 
 ```
-UDP 52000   ── 设备发现 (组播 224.0.1.100 + 广播)
-TCP 52001   ── 消息/信令
-Dynamic TCP ── 文件传输 (64KB 分块)
+UDP 52000   — Device discovery (multicast 224.0.1.100 + broadcast)
+TCP 52001   — Messaging / signaling
+Dynamic TCP — File transfer (64KB chunks)
 ```
 
-发现策略：UDP 组播 → 子网广播 → TCP 探测 → 手动 IP
+Discovery strategy: UDP multicast → subnet broadcast → TCP probe → manual IP
 
-## Getting Started / 快速开始
+## Getting Started
 
-### Prerequisites / 前置条件
+### Prerequisites
 
 - [Node.js](https://nodejs.org/) >= 18
 - [Rust](https://rustup.rs/) >= 1.75
 - [Tauri CLI](https://tauri.app/) v2
 
-### Development / 开发
+### Development
 
 ```bash
-# 安装依赖 / Install dependencies
+# Install dependencies
 npm install
 
-# 启动开发模式 / Start dev mode
+# Start dev mode
 npm run tauri dev
 ```
 
-### Build / 构建
+### Build
 
 ```bash
-# 构建发布版本 / Build release
+# Build release
 npx tauri build
 
-# 产物 / Output (Windows)
+# Output (Windows)
 src-tauri/target/release/peacock.exe
 ```
 
-## Platforms / 平台支持
+## Platforms
 
 | Platform | Status |
 |----------|--------|
@@ -94,24 +114,42 @@ src-tauri/target/release/peacock.exe
 | Android | 📋 Planned |
 | Linux | 📋 Planned |
 
-## Project Structure / 项目结构
+## Project Structure
 
 ```
-src/                    # Vue 3 前端
-├── components/         #   UI 组件 (chat, device, snippet, transfer, mobile)
-├── stores/             #   Pinia 状态管理
-├── types/              #   TypeScript 类型定义
-├── i18n/               #   国际化 (zh-CN, en)
-└── utils/              #   工具函数
+src/                    # Vue 3 frontend
+├── components/         #   UI components (chat, device, snippet, transfer, mobile)
+├── stores/             #   Pinia state management
+├── types/              #   TypeScript type definitions
+├── i18n/               #   Internationalization (zh-CN, en)
+└── utils/              #   Utility functions
 
-src-tauri/src/          # Rust 后端
-├── discovery/          #   设备发现 (UDP/TCP)
-├── messaging/          #   消息系统
-├── transfer/           #   文件传输
-├── storage/            #   SQLite 数据库
-└── protocol/           #   二进制协议
+src-tauri/src/          # Rust backend
+├── discovery/          #   Device discovery (UDP/TCP)
+├── messaging/          #   Messaging system
+├── transfer/           #   File transfer
+├── storage/            #   SQLite database
+└── protocol/           #   Binary protocol
 ```
+
+## Support the Project
+
+If you find Peacock useful, consider buying me a coffee!
+
+<p align="center">
+  <a href="https://buymeacoffee.com/jlynnc">
+    <img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" />
+  </a>
+</p>
+
+<!-- Uncomment if you set up other donation platforms:
+<p align="center">
+  <a href="https://ko-fi.com/YOUR_KOFI"><img src="https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white" /></a>
+  <a href="YOUR_WECHAT_QR"><img src="https://img.shields.io/badge/WeChat%20Pay-07C160?style=for-the-badge&logo=wechat&logoColor=white" /></a>
+  <a href="YOUR_ALIPAY_QR"><img src="https://img.shields.io/badge/Alipay-00A1E9?style=for-the-badge&logo=alipay&logoColor=white" /></a>
+</p>
+-->
 
 ## License
 
-MIT
+[MIT](LICENSE)
