@@ -258,31 +258,16 @@ function onMouseDown(index: number, e: MouseEvent) {
 let touchTimer: ReturnType<typeof setTimeout> | null = null;
 let touchStartY = 0;
 
-function onTouchStart(index: number, e: TouchEvent) {
-  if ((e.target as HTMLElement).tagName === "INPUT") return;
-  const touch = e.touches[0];
-  touchStartY = touch.clientY;
-  const itemEl = e.currentTarget as HTMLElement;
-
-  // Long press to initiate drag
-  touchTimer = setTimeout(() => {
-    dragIndex.value = index;
-    isDragging.value = true;
-    createGhost(itemEl, touch.clientX, touch.clientY);
-  }, 400);
-}
-
-function onTouchMove(e: TouchEvent) {
+function handleTouchMove(e: TouchEvent) {
   const touch = e.touches[0];
 
-  // Cancel long-press if moved too much before drag started
   if (touchTimer && Math.abs(touch.clientY - touchStartY) > 10) {
     clearTimeout(touchTimer);
     touchTimer = null;
   }
 
   if (!isDragging.value) return;
-  e.preventDefault();
+  e.preventDefault(); // Works because we add with { passive: false }
   moveGhost(touch.clientY);
 
   const listBody = listBodyRef.value;
@@ -304,11 +289,28 @@ function onTouchMove(e: TouchEvent) {
   dragOverIndex.value = hoverIdx;
 }
 
+function onTouchStart(index: number, e: TouchEvent) {
+  if ((e.target as HTMLElement).tagName === "INPUT") return;
+  const touch = e.touches[0];
+  touchStartY = touch.clientY;
+  const itemEl = e.currentTarget as HTMLElement;
+
+  // Long press to initiate drag
+  touchTimer = setTimeout(() => {
+    dragIndex.value = index;
+    isDragging.value = true;
+    createGhost(itemEl, touch.clientX, touch.clientY);
+    // Add non-passive touchmove to allow preventDefault during drag
+    document.addEventListener("touchmove", handleTouchMove, { passive: false });
+  }, 400);
+}
+
 async function onTouchEnd() {
   if (touchTimer) {
     clearTimeout(touchTimer);
     touchTimer = null;
   }
+  document.removeEventListener("touchmove", handleTouchMove);
   removeGhost();
 
   if (isDragging.value && dragIndex.value !== null && dragOverIndex.value !== null && dragIndex.value !== dragOverIndex.value) {
@@ -364,9 +366,8 @@ function formatTime(ts: number) {
           { dragging: dragIndex === idx && isDragging },
         ]"
         @mousedown="onMouseDown(idx, $event)"
-        @touchstart="onTouchStart(idx, $event)"
-        @touchmove="onTouchMove"
-        @touchend="onTouchEnd"
+        @touchstart.passive="onTouchStart(idx, $event)"
+        @touchend.passive="onTouchEnd"
         @click="store.selectedId = s.id"
         @dblclick.stop="store.renamingId = s.id"
         @contextmenu="onContextMenu($event, s.id)"
