@@ -10,7 +10,9 @@ mod transfer;
 use std::sync::Arc;
 use tauri::Manager;
 use tauri::Emitter;
+#[cfg(desktop)]
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+#[cfg(desktop)]
 use tauri::menu::{Menu, MenuItem};
 use tokio::sync::RwLock;
 use tracing::info;
@@ -27,31 +29,39 @@ pub fn run() {
         )
         .init();
 
-    tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
-            // Another instance was launched — bring existing window to front
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.show();
-                let _ = window.unminimize();
-                let _ = window.set_focus();
-            }
-            // If launched with --send argument, emit event to frontend
-            if let Some(pos) = argv.iter().position(|a| a == "--send") {
-                if let Some(file_path) = argv.get(pos + 1) {
-                    let _ = app.emit("send-file-request", file_path.clone());
+    let mut builder = tauri::Builder::default();
+
+    // Desktop-only plugins
+    #[cfg(desktop)]
+    {
+        builder = builder
+            .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
+                // Another instance was launched — bring existing window to front
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.unminimize();
+                    let _ = window.set_focus();
                 }
-            }
-        }))
+                // If launched with --send argument, emit event to frontend
+                if let Some(pos) = argv.iter().position(|a| a == "--send") {
+                    if let Some(file_path) = argv.get(pos + 1) {
+                        let _ = app.emit("send-file-request", file_path.clone());
+                    }
+                }
+            }))
+            .plugin(tauri_plugin_autostart::init(
+                tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+                Some(vec![]),
+            ));
+    }
+
+    builder
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_os::init())
-        .plugin(tauri_plugin_autostart::init(
-            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
-            Some(vec![]),
-        ))
         .invoke_handler(tauri::generate_handler![
             // Discovery
             discovery::commands::get_online_devices,
@@ -82,10 +92,9 @@ pub fn run() {
             file_commands::open_file_location,
             file_commands::delete_file,
             file_commands::check_file_exists,
-            // Window utilities
+            // Window utilities (desktop only, but safe no-ops on mobile)
             window_commands::flash_window,
             window_commands::stop_flash,
-            // Context menu
             context_menu_commands::register_context_menu,
             context_menu_commands::unregister_context_menu,
             context_menu_commands::is_context_menu_registered,
@@ -431,81 +440,84 @@ mod snippet_commands {
 }
 
 mod window_commands {
+    #[cfg(desktop)]
     use tauri::Manager;
-    use tauri::image::Image;
+
+    #[cfg(desktop)]
     use std::sync::atomic::{AtomicBool, Ordering};
 
+    #[cfg(desktop)]
     static TRAY_FLASHING: AtomicBool = AtomicBool::new(false);
 
-    /// Flash the taskbar icon and tray to alert the user (continuous until window focused)
+    /// Flash the taskbar icon and tray to alert the user
     #[tauri::command]
-    pub async fn flash_window(app: tauri::AppHandle) -> Result<(), String> {
-        // Flash taskbar
-        if let Some(window) = app.get_webview_window("main") {
-            let _ = window.request_user_attention(Some(tauri::UserAttentionType::Informational));
-        }
+    pub async fn flash_window(#[allow(unused)] app: tauri::AppHandle) -> Result<(), String> {
+        #[cfg(desktop)]
+        {
+            use tauri::image::Image;
 
-        // Start continuous tray flash if not already flashing
-        if TRAY_FLASHING.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_ok() {
-            let app_clone = app.clone();
-            tauri::async_runtime::spawn(async move {
-                let normal_icon = app_clone.default_window_icon().cloned();
-                // Create a small red dot icon (16x16) for notification state
-                let mut red_dot = vec![0u8; 16 * 16 * 4];
-                for y in 0..16u32 {
-                    for x in 0..16u32 {
-                        let idx = ((y * 16 + x) * 4) as usize;
-                        let dx = x as f32 - 8.0;
-                        let dy = y as f32 - 8.0;
-                        let dist = (dx * dx + dy * dy).sqrt();
-                        if dist < 7.0 {
-                            red_dot[idx] = 239;     // R
-                            red_dot[idx + 1] = 68;  // G
-                            red_dot[idx + 2] = 68;  // B
-                            red_dot[idx + 3] = 255;  // A
+            // Flash taskbar
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.request_user_attention(Some(tauri::UserAttentionType::Informational));
+            }
+
+            // Start continuous tray flash if not already flashing
+            if TRAY_FLASHING.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_ok() {
+                let app_clone = app.clone();
+                tauri::async_runtime::spawn(async move {
+                    let normal_icon = app_clone.default_window_icon().cloned();
+                    let mut red_dot = vec![0u8; 16 * 16 * 4];
+                    for y in 0..16u32 {
+                        for x in 0..16u32 {
+                            let idx = ((y * 16 + x) * 4) as usize;
+                            let dx = x as f32 - 8.0;
+                            let dy = y as f32 - 8.0;
+                            let dist = (dx * dx + dy * dy).sqrt();
+                            if dist < 7.0 {
+                                red_dot[idx] = 239;
+                                red_dot[idx + 1] = 68;
+                                red_dot[idx + 2] = 68;
+                                red_dot[idx + 3] = 255;
+                            }
                         }
                     }
-                }
-                let alert_icon = Image::new_owned(red_dot, 16, 16);
+                    let alert_icon = Image::new_owned(red_dot, 16, 16);
 
-                while TRAY_FLASHING.load(Ordering::SeqCst) {
-                    // Show alert icon
-                    if let Some(tray) = app_clone.tray_by_id("main") {
-                        let _ = tray.set_icon(Some(alert_icon.clone()));
+                    while TRAY_FLASHING.load(Ordering::SeqCst) {
+                        if let Some(tray) = app_clone.tray_by_id("main") {
+                            let _ = tray.set_icon(Some(alert_icon.clone()));
+                        }
+                        tokio::time::sleep(std::time::Duration::from_millis(600)).await;
+                        if !TRAY_FLASHING.load(Ordering::SeqCst) { break; }
+                        if let Some(ref normal) = normal_icon {
+                            if let Some(tray) = app_clone.tray_by_id("main") {
+                                let _ = tray.set_icon(Some(normal.clone()));
+                            }
+                        }
+                        tokio::time::sleep(std::time::Duration::from_millis(600)).await;
                     }
-                    tokio::time::sleep(std::time::Duration::from_millis(600)).await;
 
-                    if !TRAY_FLASHING.load(Ordering::SeqCst) { break; }
-
-                    // Show normal icon
                     if let Some(ref normal) = normal_icon {
                         if let Some(tray) = app_clone.tray_by_id("main") {
                             let _ = tray.set_icon(Some(normal.clone()));
                         }
                     }
-                    tokio::time::sleep(std::time::Duration::from_millis(600)).await;
-                }
-
-                // Ensure normal icon is restored
-                if let Some(ref normal) = normal_icon {
-                    if let Some(tray) = app_clone.tray_by_id("main") {
-                        let _ = tray.set_icon(Some(normal.clone()));
-                    }
-                }
-            });
+                });
+            }
         }
-
         Ok(())
     }
 
-    /// Stop tray flashing (called when window gains focus)
+    /// Stop tray flashing
     #[tauri::command]
-    pub async fn stop_flash(app: tauri::AppHandle) -> Result<(), String> {
-        TRAY_FLASHING.store(false, Ordering::SeqCst);
-        // Restore normal icon immediately
-        if let Some(normal) = app.default_window_icon().cloned() {
-            if let Some(tray) = app.tray_by_id("main") {
-                let _ = tray.set_icon(Some(normal));
+    pub async fn stop_flash(#[allow(unused)] app: tauri::AppHandle) -> Result<(), String> {
+        #[cfg(desktop)]
+        {
+            TRAY_FLASHING.store(false, Ordering::SeqCst);
+            if let Some(normal) = app.default_window_icon().cloned() {
+                if let Some(tray) = app.tray_by_id("main") {
+                    let _ = tray.set_icon(Some(normal));
+                }
             }
         }
         Ok(())
