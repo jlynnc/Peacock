@@ -18,7 +18,15 @@ const deviceId = computed(() => route.params.deviceId as string);
 const device = computed(() => deviceStore.devices.get(deviceId.value) || null);
 const messages = computed(() => chatStore.getMessages(deviceId.value));
 
-const inputText = ref("");
+// Use draft from conversation store so text survives view switches (same as desktop ChatInput)
+const inputText = computed({
+  get() {
+    return chatStore.getConversation(deviceId.value).draft || "";
+  },
+  set(val: string) {
+    chatStore.getConversation(deviceId.value).draft = val;
+  },
+});
 const messageListRef = ref<HTMLElement | null>(null);
 const { t } = useI18n();
 const isSendingFile = ref(false);
@@ -40,7 +48,10 @@ async function handleSend() {
   const text = inputText.value.trim();
   if (!text) return;
   await chatStore.sendMessage(deviceId.value, text);
+  // Clear draft (writes through the computed setter)
   inputText.value = "";
+  const conv = chatStore.getConversation(deviceId.value);
+  conv.draft = "";
   scrollToBottom();
 }
 
@@ -96,6 +107,7 @@ function goBack() {
 }
 
 onMounted(() => {
+  chatStore.loadHistory(deviceId.value);
   chatStore.markAsRead(deviceId.value);
   scrollToBottom();
 });

@@ -3,6 +3,7 @@ import { ref, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { useSettingsStore } from "@/stores/settings";
 import { isTauri } from "@/utils/platform";
+import { setLocale, getLocale } from "@/i18n";
 import {
   Smartphone,
   FolderDown,
@@ -10,6 +11,7 @@ import {
   Moon,
   Globe,
   Info,
+  Layers,
   ChevronRight,
 } from "lucide-vue-next";
 
@@ -44,9 +46,33 @@ function toggleAutoAccept() {
   settingsStore.setAutoAccept(!settingsStore.autoAcceptFiles);
 }
 
-function toggleTheme() {
-  const newTheme = settingsStore.theme === "light" ? "dark" : "light";
-  settingsStore.setTheme(newTheme);
+const themeLabels: Record<string, string> = {
+  system: "跟随系统",
+  light: "亮色",
+  dark: "暗色",
+};
+
+function cycleTheme() {
+  const themes = ["system", "light", "dark"];
+  const current = themes.indexOf(settingsStore.theme);
+  const next = themes[(current + 1) % themes.length];
+  settingsStore.setTheme(next as any);
+}
+
+const concurrentOptions = [1, 3, 5, 10, 20, 50];
+function cycleMaxConcurrent() {
+  const idx = concurrentOptions.indexOf(settingsStore.maxConcurrent);
+  const next = concurrentOptions[(idx + 1) % concurrentOptions.length];
+  settingsStore.setMaxConcurrent(next);
+}
+
+function cycleLanguage() {
+  const current = getLocale();
+  setLocale(current === "zh-CN" ? "en" : "zh-CN");
+}
+
+function currentLanguageName() {
+  return getLocale() === "zh-CN" ? "简体中文" : "English";
 }
 </script>
 
@@ -105,14 +131,24 @@ function toggleTheme() {
           </div>
         </div>
 
-        <div class="settings-row" @click="toggleTheme">
+        <div class="settings-row" @click="cycleMaxConcurrent">
+          <div class="row-icon"><Layers :size="18" color="#0d9488" /></div>
+          <div class="row-body">
+            <span class="row-label">{{ $t('settings.maxConcurrent') }}</span>
+            <div class="row-right">
+              <span class="row-value">{{ settingsStore.maxConcurrent }}</span>
+              <ChevronRight :size="16" color="#c7c7cc" />
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-row" @click="cycleTheme">
           <div class="row-icon"><Moon :size="18" color="#0d9488" /></div>
           <div class="row-body">
             <span class="row-label">{{ $t('settings.darkTheme') }}</span>
             <div class="row-right">
-              <div :class="['toggle-switch', { on: settingsStore.theme === 'dark' }]">
-                <div class="toggle-thumb"></div>
-              </div>
+              <span class="row-value">{{ themeLabels[settingsStore.theme] || settingsStore.theme }}</span>
+              <ChevronRight :size="16" color="#c7c7cc" />
             </div>
           </div>
         </div>
@@ -120,12 +156,12 @@ function toggleTheme() {
 
       <!-- Info section -->
       <div class="settings-group">
-        <div class="settings-row">
+        <div class="settings-row" @click="cycleLanguage">
           <div class="row-icon"><Globe :size="18" color="#0d9488" /></div>
           <div class="row-body">
             <span class="row-label">{{ $t('settings.language') }}</span>
             <div class="row-right">
-              <span class="row-value">简体中文</span>
+              <span class="row-value">{{ currentLanguageName() }}</span>
               <ChevronRight :size="16" color="#c7c7cc" />
             </div>
           </div>
