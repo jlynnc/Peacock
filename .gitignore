@@ -24,7 +24,9 @@ Thumbs.db
 .env.local
 
 # Mockup
-snippets-mockup.html
+*-mockup*.html
+ui-mockup*.html
 
 # Claude
 .claude/
+CLAUDE.md
