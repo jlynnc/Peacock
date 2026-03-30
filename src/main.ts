@@ -51,7 +51,6 @@ const desktopRoutes = [
 
 async function bootstrap() {
   const mobile = await detectIsMobile();
-  console.log("[Peacock] Platform detected, isMobile:", mobile);
 
   const router = createRouter({
     history: createWebHistory(),

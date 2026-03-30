@@ -1,4 +1,4 @@
-import { createI18n } from "vue-i18n";
+import { createI18n, type Composer } from "vue-i18n";
 import zhCN from "./zh-CN";
 import en from "./en";
 
@@ -29,10 +29,10 @@ export const i18n = createI18n({
 });
 
 export function setLocale(locale: string) {
-  (i18n.global.locale as any).value = locale;
+  (i18n.global as unknown as Composer).locale.value = locale;
   localStorage.setItem("peacock-locale", locale);
 }
 
 export function getLocale(): string {
-  return (i18n.global.locale as any).value;
+  return (i18n.global as unknown as Composer).locale.value;
 }

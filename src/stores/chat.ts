@@ -288,14 +288,14 @@ export const useChatStore = defineStore("chat", () => {
 
     // File transfer progress
     const unlistenProgress = await listen<
-      TransferProgress & { file_size?: number }
+      TransferProgress
     >("transfer-progress", (event) => {
       const p = event.payload;
       updateFileProgress(
         p.transfer_id,
         p.transferred_bytes,
         p.speed_bps,
-        (p as any).file_size,
+        p.file_size,
       );
     });
 

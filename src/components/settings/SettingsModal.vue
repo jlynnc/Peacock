@@ -163,7 +163,7 @@ function handleOverlayClick(e: MouseEvent) {
             <select
               class="setting-select"
               :value="settingsStore.theme"
-              @change="settingsStore.setTheme(($event.target as HTMLSelectElement).value as any)"
+              @change="settingsStore.setTheme(($event.target as HTMLSelectElement).value as 'system' | 'light' | 'dark')"
             >
               <option value="system">{{ $t('settings.language') === '语言' ? '跟随系统' : 'Follow System' }}</option>
               <option value="light">{{ $t('settings.language') === '语言' ? '亮色' : 'Light' }}</option>

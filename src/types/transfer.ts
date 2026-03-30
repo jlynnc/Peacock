@@ -27,6 +27,7 @@ export interface TransferProgress {
   transfer_id: string;
   transferred_bytes: number;
   speed_bps: number;
+  file_size?: number;
 }
 
 export interface FileOffer {

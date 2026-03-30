@@ -56,7 +56,7 @@ function cycleTheme() {
   const themes = ["system", "light", "dark"];
   const current = themes.indexOf(settingsStore.theme);
   const next = themes[(current + 1) % themes.length];
-  settingsStore.setTheme(next as any);
+  settingsStore.setTheme(next as "system" | "light" | "dark");
 }
 
 const concurrentOptions = [1, 3, 5, 10, 20, 50];
