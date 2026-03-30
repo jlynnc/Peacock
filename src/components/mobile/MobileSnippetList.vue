@@ -89,7 +89,9 @@ async function menuCopyContent() {
 
 function menuShare() {
   showMenu.value = false;
-  showDevicePicker.value = true;
+  requestAnimationFrame(() => {
+    showDevicePicker.value = true;
+  });
 }
 
 async function handleShareConfirm(deviceIds: string[]) {

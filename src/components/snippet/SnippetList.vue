@@ -91,7 +91,10 @@ async function menuCopyContent() {
 
 function menuShare() {
   showMenu.value = false;
-  showDevicePicker.value = true;
+  // Delay to avoid the same click event hitting the picker overlay
+  requestAnimationFrame(() => {
+    showDevicePicker.value = true;
+  });
 }
 
 async function handleShareConfirm(deviceIds: string[]) {
