@@ -109,21 +109,23 @@ async function saveToSnippet() {
   const text = props.message.content || "";
   if (!text) return;
 
-  // Create a new snippet with the message content
-  await snippetStore.createNew();
-  if (snippetStore.selectedId) {
-    await snippetStore.saveSnippet(snippetStore.selectedId, {
-      title: text.substring(0, 30) + (text.length > 30 ? "..." : ""),
-      content: text,
-    });
-  }
+  try {
+    const title = text.substring(0, 30) + (text.length > 30 ? "..." : "");
+    await snippetStore.createFromShare(title, text, "", "");
 
-  // Switch to snippets view
-  if (isMobile()) {
-    router.push({ name: "mobile-snippet-edit", params: { id: snippetStore.selectedId } });
-  } else {
-    deviceStore.sidebarTab = "snippets";
-    deviceStore.selectedDeviceId = null;
+    // Switch to snippets view
+    if (isMobile()) {
+      if (snippetStore.selectedId) {
+        router.push({ name: "mobile-snippet-edit", params: { id: snippetStore.selectedId } });
+      } else {
+        router.push({ name: "mobile-snippets" });
+      }
+    } else {
+      deviceStore.sidebarTab = "snippets";
+      deviceStore.selectedDeviceId = null;
+    }
+  } catch (e) {
+    console.error("Failed to save to snippet:", e);
   }
 }
 
