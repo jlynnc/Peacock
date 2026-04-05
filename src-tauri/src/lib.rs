@@ -135,6 +135,23 @@ pub fn run() {
             discovery::probe::spawn_probe(state.clone(), app_handle.clone());
             messaging::server::spawn_server(state.clone(), app_handle.clone());
 
+            // ── Handle --send argument on first launch ──
+            #[cfg(desktop)]
+            {
+                let args: Vec<String> = std::env::args().collect();
+                if let Some(pos) = args.iter().position(|a| a == "--send") {
+                    if let Some(file_path) = args.get(pos + 1) {
+                        let fp = file_path.clone();
+                        let handle = app.handle().clone();
+                        // Delay emit so frontend has time to mount
+                        tauri::async_runtime::spawn(async move {
+                            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+                            let _ = handle.emit("send-file-request", fp);
+                        });
+                    }
+                }
+            }
+
             // ── System tray ──
             #[cfg(desktop)]
             {
