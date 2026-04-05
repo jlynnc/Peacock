@@ -144,6 +144,26 @@ function onContentEditableInput() {
   scheduleSave();
 }
 
+// Force plain text paste — strip all formatting except our qc-chip markers
+function onPaste(e: ClipboardEvent) {
+  e.preventDefault();
+  const text = e.clipboardData?.getData("text/plain") || "";
+  // Insert plain text at cursor position
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return;
+  const range = sel.getRangeAt(0);
+  range.deleteContents();
+  const textNode = document.createTextNode(text);
+  range.insertNode(textNode);
+  // Move cursor to end of inserted text
+  range.setStartAfter(textNode);
+  range.collapse(true);
+  sel.removeAllRanges();
+  sel.addRange(range);
+  // Trigger save
+  onContentEditableInput();
+}
+
 function onNoteInput() {
   scheduleSave();
 }
@@ -362,6 +382,7 @@ function formatDateTime(ts: number) {
         class="content-input"
         contenteditable="true"
         @input="onContentEditableInput"
+        @paste="onPaste"
         @mousedown="onContentMouseDown"
         @contextmenu="onContentContextMenu"
         :data-placeholder="$t('snippet.contentPlaceholder')"
