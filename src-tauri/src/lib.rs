@@ -42,10 +42,20 @@ pub fn run() {
                     let _ = window.unminimize();
                     let _ = window.set_focus();
                 }
-                // If launched with --send argument, emit event to frontend
+                // Check for --send (legacy) or --send-pending (new: read from temp file)
                 if let Some(pos) = argv.iter().position(|a| a == "--send") {
                     if let Some(file_path) = argv.get(pos + 1) {
                         let _ = app.emit("send-file-request", file_path.clone());
+                    }
+                }
+                if argv.iter().any(|a| a == "--send-pending") {
+                    let send_file = std::env::temp_dir().join("peacock_send.txt");
+                    if let Ok(path) = std::fs::read_to_string(&send_file) {
+                        let path = path.trim().to_string();
+                        if !path.is_empty() {
+                            let _ = app.emit("send-file-request", path);
+                        }
+                        let _ = std::fs::remove_file(&send_file);
                     }
                 }
             }))
@@ -135,20 +145,36 @@ pub fn run() {
             discovery::probe::spawn_probe(state.clone(), app_handle.clone());
             messaging::server::spawn_server(state.clone(), app_handle.clone());
 
-            // ── Handle --send argument on first launch ──
+            // ── Handle --send / --send-pending on first launch ──
             #[cfg(desktop)]
             {
                 let args: Vec<String> = std::env::args().collect();
+                let mut send_path: Option<String> = None;
+
+                // Legacy --send <path>
                 if let Some(pos) = args.iter().position(|a| a == "--send") {
                     if let Some(file_path) = args.get(pos + 1) {
-                        let fp = file_path.clone();
-                        let handle = app.handle().clone();
-                        // Delay emit so frontend has time to mount
-                        tauri::async_runtime::spawn(async move {
-                            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-                            let _ = handle.emit("send-file-request", fp);
-                        });
+                        send_path = Some(file_path.clone());
                     }
+                }
+                // New --send-pending: read path from temp file
+                if args.iter().any(|a| a == "--send-pending") {
+                    let send_file = std::env::temp_dir().join("peacock_send.txt");
+                    if let Ok(path) = std::fs::read_to_string(&send_file) {
+                        let path = path.trim().to_string();
+                        if !path.is_empty() {
+                            send_path = Some(path);
+                        }
+                        let _ = std::fs::remove_file(&send_file);
+                    }
+                }
+
+                if let Some(fp) = send_path {
+                    let handle = app.handle().clone();
+                    tauri::async_runtime::spawn(async move {
+                        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+                        let _ = handle.emit("send-file-request", fp);
+                    });
                 }
             }
 
@@ -566,8 +592,16 @@ mod context_menu_commands {
                 .output()
                 .ok();
 
-            // Set command
-            let cmd = format!("\"{}\" --send \"%1\"", exe_path.to_string_lossy());
+            // Set command — use cmd /c to write path to temp file, then launch peacock
+            // This avoids passing exe paths directly as arguments (which triggers Windows security warnings)
+            let send_file = std::env::temp_dir().join("peacock_send.txt");
+            let send_file_str = send_file.to_string_lossy().replace("\\", "\\\\");
+            let exe_path_str = exe_path.to_string_lossy().replace("\\", "\\\\");
+            let cmd = format!(
+                "cmd /c echo %1> \"{}\" & \"{}\" --send-pending",
+                send_file.to_string_lossy(),
+                exe_path.to_string_lossy()
+            );
             std::process::Command::new("reg")
                 .args(["add", r"HKCU\Software\Classes\*\shell\Peacock\command", "/ve", "/d", &cmd, "/f"])
                 .output()
@@ -584,7 +618,11 @@ mod context_menu_commands {
                 .output()
                 .ok();
 
-            let folder_cmd = format!("\"{}\" --send \"%1\"", exe_path.to_string_lossy());
+            let folder_cmd = format!(
+                "cmd /c echo %1> \"{}\" & \"{}\" --send-pending",
+                send_file.to_string_lossy(),
+                exe_path.to_string_lossy()
+            );
             std::process::Command::new("reg")
                 .args(["add", r"HKCU\Software\Classes\Directory\shell\Peacock\command", "/ve", "/d", &folder_cmd, "/f"])
                 .output()
