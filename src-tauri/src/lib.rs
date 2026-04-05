@@ -592,16 +592,8 @@ mod context_menu_commands {
                 .output()
                 .ok();
 
-            // Set command — use cmd /c to write path to temp file, then launch peacock
-            // This avoids passing exe paths directly as arguments (which triggers Windows security warnings)
-            let send_file = std::env::temp_dir().join("peacock_send.txt");
-            let send_file_str = send_file.to_string_lossy().replace("\\", "\\\\");
-            let exe_path_str = exe_path.to_string_lossy().replace("\\", "\\\\");
-            let cmd = format!(
-                "cmd /c echo %1> \"{}\" & \"{}\" --send-pending",
-                send_file.to_string_lossy(),
-                exe_path.to_string_lossy()
-            );
+            // Set command
+            let cmd = format!("\"{}\" --send \"%1\"", exe_path.to_string_lossy());
             std::process::Command::new("reg")
                 .args(["add", r"HKCU\Software\Classes\*\shell\Peacock\command", "/ve", "/d", &cmd, "/f"])
                 .output()
@@ -618,11 +610,7 @@ mod context_menu_commands {
                 .output()
                 .ok();
 
-            let folder_cmd = format!(
-                "cmd /c echo %1> \"{}\" & \"{}\" --send-pending",
-                send_file.to_string_lossy(),
-                exe_path.to_string_lossy()
-            );
+            let folder_cmd = format!("\"{}\" --send \"%1\"", exe_path.to_string_lossy());
             std::process::Command::new("reg")
                 .args(["add", r"HKCU\Software\Classes\Directory\shell\Peacock\command", "/ve", "/d", &folder_cmd, "/f"])
                 .output()
