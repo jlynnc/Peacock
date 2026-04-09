@@ -2,7 +2,7 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio::time::{interval, Duration};
-use tracing::{debug, error, warn};
+use tracing::{debug, error, info, warn};
 
 use crate::protocol::header::PacketHeader;
 use crate::protocol::types::{
@@ -11,28 +11,32 @@ use crate::protocol::types::{
 use crate::protocol::wire::encode_payload;
 use crate::state::AppState;
 
-/// Spawn the discovery beacon task that broadcasts our presence
 pub fn spawn_beacon(state: Arc<RwLock<AppState>>) {
     tauri::async_runtime::spawn(async move {
-        if let Err(e) = run_beacon(state).await {
-            error!("Beacon task failed: {}", e);
+        loop {
+            match run_beacon_loop(&state).await {
+                Ok(()) => break, // clean exit
+                Err(e) => {
+                    warn!("Beacon socket failed: {}, rebuilding in 3s...", e);
+                    tokio::time::sleep(Duration::from_secs(3)).await;
+                }
+            }
         }
     });
 }
 
-async fn run_beacon(state: Arc<RwLock<AppState>>) -> crate::error::Result<()> {
+async fn run_beacon_loop(state: &Arc<RwLock<AppState>>) -> crate::error::Result<()> {
     let socket = create_udp_socket()?;
+    info!("Beacon started");
 
     let mut tick = interval(Duration::from_secs(BEACON_INTERVAL_SECS));
+    let mut consecutive_errors = 0u32;
 
     loop {
         tick.tick().await;
 
         let st = state.read().await;
-
-        // Include broadcast-restricted peers in our announcement
         let restricted_peers = st.discovery.get_restricted_peers();
-
         let payload = AnnouncePayload {
             device_name: st.device_name.clone(),
             platform: st.platform.clone(),
@@ -44,38 +48,53 @@ async fn run_beacon(state: Arc<RwLock<AppState>>) -> crate::error::Result<()> {
         let payload_bytes = match encode_payload(&payload) {
             Ok(bytes) => bytes,
             Err(e) => {
-                error!("Failed to encode announce payload: {}", e);
+                error!("Failed to encode announce: {}", e);
                 continue;
             }
         };
 
-        let header =
-            PacketHeader::new(PacketType::Announce, &st.device_id_bytes, payload_bytes.len() as u32);
+        let header = PacketHeader::new(
+            PacketType::Announce,
+            &st.device_id_bytes,
+            payload_bytes.len() as u32,
+        );
         let mut packet = Vec::with_capacity(PacketHeader::SIZE + payload_bytes.len());
         packet.extend_from_slice(&header.to_bytes());
         packet.extend_from_slice(&payload_bytes);
-
         drop(st);
 
-        // Layer 1: UDP Multicast
+        let mut send_ok = false;
+
+        // Layer 1: Multicast
         let multicast_addr: SocketAddr =
             format!("{}:{}", MULTICAST_ADDR, DISCOVERY_PORT).parse().unwrap();
-        if let Err(e) = socket.send_to(&packet, multicast_addr).await {
-            debug!("Multicast send failed: {}", e);
+        if socket.send_to(&packet, multicast_addr).await.is_ok() {
+            send_ok = true;
         }
 
         // Layer 2: Directed subnet broadcast
         if let Some(broadcast_addr) = get_broadcast_address() {
-            let broadcast_target = SocketAddr::new(broadcast_addr, DISCOVERY_PORT);
-            if let Err(e) = socket.send_to(&packet, broadcast_target).await {
-                debug!("Broadcast send failed: {}", e);
+            let target = SocketAddr::new(broadcast_addr, DISCOVERY_PORT);
+            if socket.send_to(&packet, target).await.is_ok() {
+                send_ok = true;
             }
         }
 
         // Layer 3: Limited broadcast
-        let limited_broadcast = SocketAddr::new(IpAddr::V4(Ipv4Addr::BROADCAST), DISCOVERY_PORT);
-        if let Err(e) = socket.send_to(&packet, limited_broadcast).await {
-            debug!("Limited broadcast send failed: {}", e);
+        let limited = SocketAddr::new(IpAddr::V4(Ipv4Addr::BROADCAST), DISCOVERY_PORT);
+        if socket.send_to(&packet, limited).await.is_ok() {
+            send_ok = true;
+        }
+
+        if send_ok {
+            consecutive_errors = 0;
+        } else {
+            consecutive_errors += 1;
+            // If all sends fail repeatedly, socket is dead — rebuild
+            if consecutive_errors >= 3 {
+                warn!("Beacon: all sends failed {} times, rebuilding socket", consecutive_errors);
+                return Err(crate::error::PeacockError::Network("Socket dead".into()));
+            }
         }
     }
 }
@@ -110,7 +129,6 @@ fn get_broadcast_address() -> Option<IpAddr> {
     None
 }
 
-/// Send a BYE packet for graceful shutdown
 pub async fn send_bye(state: &AppState) -> crate::error::Result<()> {
     let socket = create_udp_socket()?;
 
