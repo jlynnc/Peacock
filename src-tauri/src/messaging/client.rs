@@ -47,7 +47,7 @@ async fn connect_tcp(target_addr: SocketAddr) -> Result<TcpStream> {
         // Non-blocking connect — will return WouldBlock, that's expected
         match socket.connect(&target_addr.into()) {
             Ok(_) => {}
-            Err(e) if e.raw_os_error() == Some(libc::EINPROGRESS) => {}
+            Err(e) if e.raw_os_error() == Some(36) => {} // EINPROGRESS on iOS/macOS
             Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {}
             Err(e) => {
                 return Err(PeacockError::Network(format!("Connect to {}: {}", target_addr, e)));
