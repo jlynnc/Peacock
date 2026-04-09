@@ -25,11 +25,9 @@
 
 ## 截图
 
-<!-- 替换为实际截图路径 -->
-
-| 设备发现 | 即时聊天 | 文件传输 | 片段管理 |
-|:---:|:---:|:---:|:---:|
-| ![devices](docs/screenshots/devices.png) | ![chat](docs/screenshots/chat.png) | ![transfer](docs/screenshots/transfer.png) | ![snippets](docs/screenshots/snippets.png) |
+| 即时聊天 | 片段管理 |
+|:---:|:---:|
+| ![chat](docs/screenshots/chat.png) | ![snippets](docs/screenshots/snippets.png) |
 
 ## 亮点功能
 
@@ -37,11 +35,8 @@
 
 Peacock 最具特色的功能。在片段编辑器中，选中任意文本后点击浮动的**标记按钮**，即可将选中内容保存为可复用的片段。无需复制粘贴，无需切换应用 — 选中即标记。
 
-<!-- 替换为实际截图 -->
 <p align="center">
-  <img src="docs/screenshots/quick-copy.png" width="300" />
-  <br/>
-  <em>选中文本 → 点击浮动标记按钮 → 保存为片段</em>
+  <img src="docs/screenshots/snippets.png" width="600" />
 </p>
 
 非常适合收集 API Key、代码片段、会议笔记，或任何需要跨设备使用的文本。

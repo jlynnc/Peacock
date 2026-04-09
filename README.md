@@ -25,11 +25,9 @@
 
 ## Screenshots
 
-<!-- Replace with actual screenshot paths after capturing -->
-
-| Devices | Chat | File Transfer | Snippets |
-|:---:|:---:|:---:|:---:|
-| ![devices](docs/screenshots/devices.png) | ![chat](docs/screenshots/chat.png) | ![transfer](docs/screenshots/transfer.png) | ![snippets](docs/screenshots/snippets.png) |
+| Chat | Snippets |
+|:---:|:---:|
+| ![chat](docs/screenshots/chat.png) | ![snippets](docs/screenshots/snippets.png) |
 
 ## Highlights
 
@@ -37,11 +35,8 @@
 
 The standout feature of Peacock. When editing a snippet, simply select any text and tap the floating **mark button** to instantly save it as a reusable snippet. No copy-paste, no switching apps — just select and mark.
 
-<!-- Replace with actual screenshot -->
 <p align="center">
-  <img src="docs/screenshots/quick-copy.png" width="300" />
-  <br/>
-  <em>Select text → Tap the floating mark → Saved as snippet</em>
+  <img src="docs/screenshots/snippets.png" width="600" />
 </p>
 
 Perfect for collecting API keys, code fragments, meeting notes, or any text you need across devices.
