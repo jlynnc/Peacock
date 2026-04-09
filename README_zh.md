@@ -25,9 +25,9 @@
 
 ## 截图
 
-| 即时聊天 | 片段管理 |
+| 片段管理 | 即时聊天 |
 |:---:|:---:|
-| ![chat](docs/screenshots/chat.png) | ![snippets](docs/screenshots/snippets.png) |
+| ![snippets](docs/screenshots/snippets.png) | ![chat](docs/screenshots/chat.png) |
 
 ## 亮点功能
 
@@ -137,12 +137,12 @@ src-tauri/src/          # Rust 后端
   </a>
 </p>
 
-<!-- 如果设置了其他赞助平台，取消注释：
+<details>
+<summary>支付宝</summary>
 <p align="center">
-  <a href="微信收款码图片路径"><img src="https://img.shields.io/badge/微信赞赏-07C160?style=for-the-badge&logo=wechat&logoColor=white" /></a>
-  <a href="支付宝收款码图片路径"><img src="https://img.shields.io/badge/支付宝-00A1E9?style=for-the-badge&logo=alipay&logoColor=white" /></a>
+  <img src="docs/alipay-qr.jpg" width="200" />
 </p>
--->
+</details>
 
 ## 许可证
 

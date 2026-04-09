@@ -25,9 +25,9 @@
 
 ## Screenshots
 
-| Chat | Snippets |
+| Snippets | Chat |
 |:---:|:---:|
-| ![chat](docs/screenshots/chat.png) | ![snippets](docs/screenshots/snippets.png) |
+| ![snippets](docs/screenshots/snippets.png) | ![chat](docs/screenshots/chat.png) |
 
 ## Highlights
 
@@ -137,13 +137,12 @@ If you find Peacock useful, consider buying me a coffee!
   </a>
 </p>
 
-<!-- Uncomment if you set up other donation platforms:
+<details>
+<summary>Alipay / 支付宝</summary>
 <p align="center">
-  <a href="https://ko-fi.com/YOUR_KOFI"><img src="https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white" /></a>
-  <a href="YOUR_WECHAT_QR"><img src="https://img.shields.io/badge/WeChat%20Pay-07C160?style=for-the-badge&logo=wechat&logoColor=white" /></a>
-  <a href="YOUR_ALIPAY_QR"><img src="https://img.shields.io/badge/Alipay-00A1E9?style=for-the-badge&logo=alipay&logoColor=white" /></a>
+  <img src="docs/alipay-qr.jpg" width="200" />
 </p>
--->
+</details>
 
 ## License
 
