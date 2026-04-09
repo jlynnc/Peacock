@@ -24,30 +24,44 @@ pub async fn send_to_device<T: serde::Serialize>(
     Ok(())
 }
 
-/// Connect TCP — on iOS, bind to local Wi-Fi IP first to force correct interface
 async fn connect_tcp(target_addr: SocketAddr) -> Result<TcpStream> {
+    // On iOS, bind the socket to the Wi-Fi interface (en0) using IP_BOUND_IF
+    // Without this, iOS may route through the wrong interface → "No route to host"
     #[cfg(target_os = "ios")]
     {
         use socket2::{Domain, Protocol, Socket, Type};
-        use std::net::{Ipv4Addr, SocketAddrV4};
-
-        let local_ip = crate::state::detect_local_ip();
-        let local_v4: Ipv4Addr = local_ip.parse().unwrap_or(Ipv4Addr::UNSPECIFIED);
-        let bind_addr = SocketAddr::V4(SocketAddrV4::new(local_v4, 0));
 
         let socket = Socket::new(Domain::IPV4, Type::STREAM, Some(Protocol::TCP))
             .map_err(|e| PeacockError::Network(format!("Socket create: {}", e)))?;
 
-        socket.bind(&bind_addr.into())
-            .map_err(|e| PeacockError::Network(format!("Bind to {}: {}", bind_addr, e)))?;
+        // Get en0 (Wi-Fi) interface index and bind socket to it
+        let ifindex = unsafe { libc_ifnametoindex() };
+        if ifindex > 0 {
+            unsafe {
+                let fd = socket2_fd(&socket);
+                let ret = libc::setsockopt(
+                    fd,
+                    libc::IPPROTO_IP,
+                    25, // IP_BOUND_IF on iOS/macOS
+                    &ifindex as *const u32 as *const libc::c_void,
+                    std::mem::size_of::<u32>() as u32,
+                );
+                if ret != 0 {
+                    return Err(PeacockError::Network(format!(
+                        "setsockopt IP_BOUND_IF failed: {}",
+                        std::io::Error::last_os_error()
+                    )));
+                }
+            }
+        }
 
         socket.set_nonblocking(true)
             .map_err(|e| PeacockError::Network(format!("Set nonblocking: {}", e)))?;
 
-        // Non-blocking connect — will return WouldBlock, that's expected
+        // Non-blocking connect
         match socket.connect(&target_addr.into()) {
             Ok(_) => {}
-            Err(e) if e.raw_os_error() == Some(36) => {} // EINPROGRESS on iOS/macOS
+            Err(e) if e.raw_os_error() == Some(36) => {} // EINPROGRESS
             Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {}
             Err(e) => {
                 return Err(PeacockError::Network(format!("Connect to {}: {}", target_addr, e)));
@@ -58,11 +72,10 @@ async fn connect_tcp(target_addr: SocketAddr) -> Result<TcpStream> {
         let stream = TcpStream::from_std(std_stream)
             .map_err(|e| PeacockError::Network(format!("Tokio wrap: {}", e)))?;
 
-        // Wait for connection to complete
+        // Wait for async connect to complete
         stream.writable().await
             .map_err(|e| PeacockError::Network(format!("Connect await {}: {}", target_addr, e)))?;
 
-        // Check for connection error
         if let Some(err) = stream.take_error()
             .map_err(|e| PeacockError::Network(format!("take_error: {}", e)))? {
             return Err(PeacockError::Network(format!("Connect to {}: {}", target_addr, err)));
@@ -77,4 +90,18 @@ async fn connect_tcp(target_addr: SocketAddr) -> Result<TcpStream> {
             .await
             .map_err(|e| PeacockError::Network(format!("Cannot connect to {}: {}", target_addr, e)))
     }
+}
+
+/// Get the en0 (Wi-Fi) interface index on iOS
+#[cfg(target_os = "ios")]
+unsafe fn libc_ifnametoindex() -> u32 {
+    let name = std::ffi::CString::new("en0").unwrap();
+    libc::if_nametoindex(name.as_ptr())
+}
+
+/// Get raw file descriptor from socket2::Socket
+#[cfg(target_os = "ios")]
+unsafe fn socket2_fd(socket: &socket2::Socket) -> i32 {
+    use std::os::unix::io::AsRawFd;
+    socket.as_raw_fd()
 }
