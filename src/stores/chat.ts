@@ -66,12 +66,19 @@ export const useChatStore = defineStore("chat", () => {
     conv.last_message = tempMsg;
 
     try {
+      // Debug: if text is "/debug", show self info instead of sending
+      if (text === "/debug") {
+        const { getSelfInfo } = await import("@/utils/ipc");
+        const info = await getSelfInfo();
+        tempMsg.content = `[DEBUG]\nIP: ${info.ip_addr}\nPort: ${info.tcp_port}\nPlatform: ${info.platform}\nDevice: ${info.device_name}\nID: ${info.device_id}`;
+        tempMsg.status = "sent";
+        return;
+      }
       const msgId = await ipcSendMessage(deviceId, text);
       tempMsg.id = msgId;
       tempMsg.status = "sent";
     } catch (e) {
       tempMsg.status = "failed";
-      // Show error detail as a message for debugging
       tempMsg.content = `${text}\n[ERROR: ${e}]`;
       console.error("Failed to send message:", e);
     }
