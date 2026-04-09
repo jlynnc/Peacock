@@ -28,7 +28,9 @@ async fn run_listener(
     state: Arc<RwLock<AppState>>,
     app_handle: tauri::AppHandle,
 ) -> crate::error::Result<()> {
+    println!("[PEACOCK-DEBUG] Discovery listener starting...");
     let socket = create_listen_socket()?;
+    println!("[PEACOCK-DEBUG] Discovery listener STARTED on UDP port {}", DISCOVERY_PORT);
     info!("Discovery listener started on UDP port {}", DISCOVERY_PORT);
 
     let mut buf = [0u8; 2048];
@@ -105,6 +107,7 @@ async fn run_listener(
                         );
 
                         if is_new_or_back {
+                            println!("[PEACOCK-DEBUG] Device discovered: {} at {}:{}", payload.device_name, source_ip, payload.tcp_port);
                             info!(
                                 "Device discovered: {} ({}) at {}",
                                 payload.device_name, device_id_str, source_ip

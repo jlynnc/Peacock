@@ -21,7 +21,9 @@ pub fn spawn_beacon(state: Arc<RwLock<AppState>>) {
 }
 
 async fn run_beacon(state: Arc<RwLock<AppState>>) -> crate::error::Result<()> {
+    println!("[PEACOCK-DEBUG] Beacon starting...");
     let socket = create_udp_socket()?;
+    println!("[PEACOCK-DEBUG] Beacon UDP socket created");
 
     let mut tick = interval(Duration::from_secs(BEACON_INTERVAL_SECS));
 

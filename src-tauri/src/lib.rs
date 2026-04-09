@@ -127,6 +127,10 @@ pub fn run() {
 
             let app_state = AppState::new(data_dir).expect("Failed to initialize app state");
 
+            println!("[PEACOCK-DEBUG] === Peacock Starting ===");
+            println!("[PEACOCK-DEBUG] Device: {} ({})", app_state.device_name, app_state.device_id);
+            println!("[PEACOCK-DEBUG] IP: {}, Platform: {}", app_state.ip_addr, app_state.platform);
+            println!("[PEACOCK-DEBUG] TCP port: {}", app_state.tcp_port);
             info!(
                 "Device: {} ({}), IP: {}, Platform: {}",
                 app_state.device_name, app_state.device_id, app_state.ip_addr, app_state.platform
