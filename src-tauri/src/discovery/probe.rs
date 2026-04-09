@@ -63,7 +63,7 @@ async fn run_probe(
             let addr = SocketAddr::new(IpAddr::V4(ip), MESSAGING_PORT);
 
             // Try to connect with a short timeout
-            match tokio::time::timeout(Duration::from_millis(500), TcpStream::connect(addr)).await {
+            match tokio::time::timeout(Duration::from_millis(500), crate::messaging::client::ios_aware_tcp_connect(addr)).await {
                 Ok(Ok(mut stream)) => {
                     // Successfully connected - this is a Peacock instance!
                     // We could send a probe/handshake here

@@ -111,7 +111,7 @@ async fn do_send(
         file.seek(SeekFrom::Start(resume_offset)).await?;
     }
 
-    let mut stream = TcpStream::connect(receiver_addr).await?;
+    let mut stream = crate::messaging::client::ios_aware_tcp_connect(receiver_addr).await?;
     info!(
         "Sending file to {}, offset={}, size={}",
         receiver_addr, resume_offset, file_size
@@ -211,7 +211,7 @@ async fn do_send_folder(
         size
     };
 
-    let mut stream = TcpStream::connect(receiver_addr).await?;
+    let mut stream = crate::messaging::client::ios_aware_tcp_connect(receiver_addr).await?;
     info!(
         "Sending folder to {}, {} files, {} bytes",
         receiver_addr, manifest.len(), total_size

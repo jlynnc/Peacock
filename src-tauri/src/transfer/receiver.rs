@@ -23,12 +23,25 @@ pub async fn start_receiving(
     download_dir: PathBuf,
     is_folder: bool,
 ) -> crate::error::Result<u16> {
-    // Bind to a random available port
-    let listener = TcpListener::bind(SocketAddr::new(
-        IpAddr::V4(Ipv4Addr::UNSPECIFIED),
-        0,
-    ))
-    .await?;
+    // Bind to a random available port (with Wi-Fi binding on iOS)
+    let bind_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 0);
+
+    #[cfg(target_os = "ios")]
+    let listener = {
+        use socket2::{Domain, Protocol, Socket, Type};
+        let socket = Socket::new(Domain::IPV4, Type::STREAM, Some(Protocol::TCP))?;
+        socket.set_reuse_address(true)?;
+        crate::net_util::bind_socket_to_wifi(&socket).ok();
+        socket.bind(&bind_addr.into())?;
+        socket.listen(128)?;
+        socket.set_nonblocking(true)?;
+        let std_listener: std::net::TcpListener = socket.into();
+        TcpListener::from_std(std_listener)?
+    };
+
+    #[cfg(not(target_os = "ios"))]
+    let listener = TcpListener::bind(bind_addr).await?;
+
     let port = listener.local_addr()?.port();
 
     info!(

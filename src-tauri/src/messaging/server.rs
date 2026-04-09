@@ -27,7 +27,24 @@ async fn run_server(
 ) -> crate::error::Result<()> {
     let addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), MESSAGING_PORT);
     println!("[PEACOCK-DEBUG] TCP server binding to {}", addr);
+
+    // On iOS, create listener with IP_BOUND_IF to ensure it listens on Wi-Fi
+    #[cfg(target_os = "ios")]
+    let listener = {
+        use socket2::{Domain, Protocol, Socket, Type};
+        let socket = Socket::new(Domain::IPV4, Type::STREAM, Some(Protocol::TCP))?;
+        socket.set_reuse_address(true)?;
+        crate::net_util::bind_socket_to_wifi(&socket).ok();
+        socket.bind(&addr.into())?;
+        socket.listen(128)?;
+        socket.set_nonblocking(true)?;
+        let std_listener: std::net::TcpListener = socket.into();
+        TcpListener::from_std(std_listener)?
+    };
+
+    #[cfg(not(target_os = "ios"))]
     let listener = TcpListener::bind(addr).await?;
+
     println!("[PEACOCK-DEBUG] TCP server STARTED on port {}", MESSAGING_PORT);
     info!("Messaging server started on TCP port {}", MESSAGING_PORT);
 

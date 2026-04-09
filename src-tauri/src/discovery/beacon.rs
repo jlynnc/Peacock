@@ -88,6 +88,9 @@ fn create_udp_socket() -> crate::error::Result<tokio::net::UdpSocket> {
         warn!("Failed to join multicast group: {}", e);
     }
 
+    // On iOS, bind to Wi-Fi interface to ensure broadcast goes out on LAN
+    crate::net_util::bind_socket_to_wifi(&socket).ok();
+
     socket.set_nonblocking(true)?;
     socket.bind(&SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 0).into())?;
 

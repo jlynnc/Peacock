@@ -2,8 +2,9 @@ mod clipboard;
 mod discovery;
 mod error;
 mod messaging;
+pub mod net_util;
 mod protocol;
-mod state;
+pub mod state;
 mod storage;
 mod transfer;
 

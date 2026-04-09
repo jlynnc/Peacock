@@ -153,6 +153,9 @@ fn create_listen_socket() -> crate::error::Result<tokio::net::UdpSocket> {
         let _ = socket.set_reuse_address(true);
     }
 
+    // On iOS, bind to Wi-Fi interface
+    crate::net_util::bind_socket_to_wifi(&socket).ok();
+
     socket.bind(&SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), DISCOVERY_PORT).into())?;
     socket.set_broadcast(true)?;
     socket.set_nonblocking(true)?;
