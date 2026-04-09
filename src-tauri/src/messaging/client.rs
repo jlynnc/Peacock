@@ -15,9 +15,14 @@ pub async fn send_to_device<T: serde::Serialize>(
 ) -> Result<()> {
     let payload_bytes = encode_payload(payload)?;
 
+    tracing::info!("Attempting TCP connect to {}", target_addr);
     let mut stream = TcpStream::connect(target_addr)
         .await
-        .map_err(|e| PeacockError::Network(format!("Cannot connect to {}: {}", target_addr, e)))?;
+        .map_err(|e| {
+            tracing::error!("TCP connect to {} failed: {}", target_addr, e);
+            PeacockError::Network(format!("Cannot connect to {}: {}", target_addr, e))
+        })?;
+    tracing::info!("TCP connected to {} successfully", target_addr);
 
     debug!("Connected to {} for {:?}", target_addr, packet_type);
 
