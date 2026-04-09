@@ -77,6 +77,7 @@ pub fn run() {
             // Discovery
             discovery::commands::get_online_devices,
             discovery::commands::get_self_info,
+            discovery::commands::rebuild_server,
             discovery::commands::udp_test,
             // Messaging
             messaging::commands::send_message,
@@ -145,7 +146,8 @@ pub fn run() {
             discovery::beacon::spawn_beacon(state.clone());
             discovery::listener::spawn_listener(state.clone(), app_handle.clone());
             discovery::probe::spawn_probe(state.clone(), app_handle.clone());
-            messaging::server::spawn_server(state.clone(), app_handle.clone());
+            let server_rebuild_tx = messaging::server::spawn_server(state.clone(), app_handle.clone());
+            app.manage(server_rebuild_tx);
 
             // ── Handle --send / --send-pending on first launch ──
             #[cfg(desktop)]

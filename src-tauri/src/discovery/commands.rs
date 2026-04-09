@@ -27,6 +27,15 @@ pub async fn get_self_info(
     })
 }
 
+/// Notify the messaging server to rebuild its socket (called when app resumes)
+#[tauri::command]
+pub async fn rebuild_server(
+    rebuild_tx: tauri::State<'_, tokio::sync::watch::Sender<bool>>,
+) -> Result<(), PeacockError> {
+    let _ = rebuild_tx.send(true);
+    Ok(())
+}
+
 /// Debug: send a UDP unicast packet to a target IP to test if iOS can send UDP
 #[tauri::command]
 pub async fn udp_test(target_ip: String) -> Result<String, PeacockError> {
