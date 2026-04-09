@@ -16,10 +16,10 @@ pub const MESSAGING_PORT: u16 = 52001;
 pub const MULTICAST_ADDR: &str = "224.0.1.100";
 
 /// Discovery beacon interval in seconds
-pub const BEACON_INTERVAL_SECS: u64 = 3;
+pub const BEACON_INTERVAL_SECS: u64 = 10;
 
 /// Device offline timeout in seconds
-pub const OFFLINE_TIMEOUT_SECS: u64 = 10;
+pub const OFFLINE_TIMEOUT_SECS: u64 = 30;
 
 /// File transfer chunk size (64KB)
 pub const CHUNK_SIZE: usize = 64 * 1024;
@@ -30,10 +30,12 @@ pub const PROBE_CONCURRENCY: usize = 50;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[repr(u16)]
 pub enum PacketType {
-    /// UDP: Device announcement
+    /// UDP broadcast: Device announcement
     Announce = 1,
     /// UDP: Device going offline
     Bye = 2,
+    /// UDP unicast: Response to an Announce (proves device is alive)
+    AnnounceResponse = 3,
     /// TCP: Text message
     Text = 10,
     /// TCP: File transfer offer
@@ -57,6 +59,7 @@ impl PacketType {
         match v {
             1 => Some(Self::Announce),
             2 => Some(Self::Bye),
+            3 => Some(Self::AnnounceResponse),
             10 => Some(Self::Text),
             20 => Some(Self::FileOffer),
             21 => Some(Self::FileAccept),
@@ -76,6 +79,19 @@ pub struct AnnouncePayload {
     pub platform: String,
     pub tcp_port: u16,
     pub features: u32,
+    /// Devices known to be broadcast-restricted (included in broadcasts to help them be discovered)
+    #[serde(default)]
+    pub restricted_peers: Vec<PeerInfo>,
+}
+
+/// Compact device info for the restricted peers list
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PeerInfo {
+    pub device_id: String,
+    pub device_name: String,
+    pub ip_addr: String,
+    pub tcp_port: u16,
+    pub platform: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

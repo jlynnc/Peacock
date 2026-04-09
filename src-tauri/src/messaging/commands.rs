@@ -14,17 +14,14 @@ pub async fn send_message(
     device_id: String,
     text: String,
 ) -> Result<String, PeacockError> {
-    println!("[PEACOCK-DEBUG] send_message called: device_id={}, text={}", device_id, text);
     let (target_addr, self_device_id_bytes, message_id) = {
         let state = state.read().await;
         let device = state
             .discovery
             .get_device(&device_id)
             .ok_or_else(|| {
-                println!("[PEACOCK-DEBUG] Device NOT FOUND: {}", device_id);
                 PeacockError::DeviceNotFound(device_id.clone())
             })?;
-        println!("[PEACOCK-DEBUG] Device found: {}:{}", device.ip_addr, device.tcp_port);
 
         let addr: SocketAddr = format!("{}:{}", device.ip_addr, device.tcp_port)
             .parse()

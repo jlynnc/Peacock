@@ -9,7 +9,7 @@ use crate::protocol::header::PacketHeader;
 use crate::protocol::types::{
     AnnouncePayload, PacketType, DISCOVERY_PORT, MULTICAST_ADDR, OFFLINE_TIMEOUT_SECS,
 };
-use crate::protocol::wire::decode_payload;
+use crate::protocol::wire::{decode_payload, encode_payload};
 use crate::state::AppState;
 
 /// Spawn the discovery listener task
@@ -17,6 +17,7 @@ pub fn spawn_listener(
     state: Arc<RwLock<AppState>>,
     app_handle: tauri::AppHandle,
 ) {
+    // Main listener
     tauri::async_runtime::spawn(async move {
         if let Err(e) = run_listener(state, app_handle).await {
             error!("Listener task failed: {}", e);
@@ -28,14 +29,12 @@ async fn run_listener(
     state: Arc<RwLock<AppState>>,
     app_handle: tauri::AppHandle,
 ) -> crate::error::Result<()> {
-    println!("[PEACOCK-DEBUG] Discovery listener starting...");
-    let socket = create_listen_socket()?;
-    println!("[PEACOCK-DEBUG] Discovery listener STARTED on UDP port {}", DISCOVERY_PORT);
+    let socket = Arc::new(create_listen_socket()?);
     info!("Discovery listener started on UDP port {}", DISCOVERY_PORT);
 
-    let mut buf = [0u8; 2048];
+    let mut buf = [0u8; 4096];
 
-    // Also spawn a timeout checker
+    // Spawn timeout checker
     let state_clone = state.clone();
     let app_clone = app_handle.clone();
     tauri::async_runtime::spawn(async move {
@@ -81,14 +80,15 @@ async fn run_listener(
                 let device_id_str = uuid_from_bytes(&header.device_id);
                 let source_ip = addr.ip();
 
+                let payload_end = PacketHeader::SIZE + header.payload_length as usize;
+                if len < payload_end {
+                    continue;
+                }
+                let payload_bytes = &buf[PacketHeader::SIZE..payload_end];
+
                 match header.get_packet_type() {
                     Some(PacketType::Announce) => {
-                        let payload_end = PacketHeader::SIZE + header.payload_length as usize;
-                        if len < payload_end {
-                            continue;
-                        }
-                        let payload_bytes = &buf[PacketHeader::SIZE..payload_end];
-
+                        // Received a UDP broadcast from another device
                         let payload: AnnouncePayload = match decode_payload(payload_bytes) {
                             Ok(p) => p,
                             Err(e) => {
@@ -97,8 +97,8 @@ async fn run_listener(
                             }
                         };
 
-                        let mut state = state.write().await;
-                        let is_new_or_back = state.discovery.upsert_device(
+                        let mut st = state.write().await;
+                        let is_new_or_back = st.discovery.upsert_device(
                             device_id_str.clone(),
                             payload.device_name.clone(),
                             source_ip,
@@ -106,45 +106,91 @@ async fn run_listener(
                             payload.platform.clone(),
                         );
 
+                        // This device can broadcast
+                        st.discovery.mark_can_broadcast(&device_id_str);
+
                         if is_new_or_back {
-                            println!("[PEACOCK-DEBUG] Device discovered: {} at {}:{}", payload.device_name, source_ip, payload.tcp_port);
-                            info!(
-                                "Device discovered: {} ({}) at {}",
-                                payload.device_name, device_id_str, source_ip
-                            );
-                            if let Some(device) = state.discovery.get_device(&device_id_str) {
+                            info!("Device discovered (broadcast): {} at {}", payload.device_name, source_ip);
+                            if let Some(device) = st.discovery.get_device(&device_id_str) {
                                 let _ = app_handle.emit("device-online", device.clone());
                             }
+                        }
 
-                            // TCP announce-back: tell the remote device about us
-                            // This is essential on iOS where UDP broadcast is blocked
-                            let self_id = state.device_id_bytes;
-                            let self_name = state.device_name.clone();
-                            let self_platform = state.platform.clone();
-                            let self_port = state.tcp_port;
-                            let target_addr = std::net::SocketAddr::new(source_ip, payload.tcp_port);
-                            drop(state); // release lock before async TCP
-                            tauri::async_runtime::spawn(async move {
-                                let announce = AnnouncePayload {
-                                    device_name: self_name,
-                                    platform: self_platform,
-                                    tcp_port: self_port,
-                                    features: 0xFFFF,
-                                };
-                                if let Ok(payload_bytes) = crate::protocol::wire::encode_payload(&announce) {
-                                    let _ = crate::messaging::client::send_to_device(
-                                        target_addr,
-                                        PacketType::Announce,
-                                        &self_id,
-                                        &announce,
-                                    ).await;
-                                }
-                            });
+                        // Process restricted peers list from the broadcast
+                        let self_id_str = st.device_id.clone();
+                        let new_peers = st.discovery.merge_restricted_peers(
+                            &payload.restricted_peers,
+                            &self_id_str,
+                        );
+                        for peer_id in &new_peers {
+                            if let Some(device) = st.discovery.get_device(peer_id) {
+                                info!("Device discovered (via restricted list): {} at {}", device.device_name, device.ip_addr);
+                                let _ = app_handle.emit("device-online", device.clone());
+                            }
+                        }
+
+                        // Send UDP unicast response back
+                        let self_name = st.device_name.clone();
+                        let self_platform = st.platform.clone();
+                        let self_port = st.tcp_port;
+                        let self_id_bytes = st.device_id_bytes;
+                        drop(st);
+
+                        let response = AnnouncePayload {
+                            device_name: self_name,
+                            platform: self_platform,
+                            tcp_port: self_port,
+                            features: 0xFFFF,
+                            restricted_peers: Vec::new(), // responses don't carry the list
+                        };
+                        if let Ok(resp_bytes) = encode_payload(&response) {
+                            let resp_header = PacketHeader::new(
+                                PacketType::AnnounceResponse,
+                                &self_id_bytes,
+                                resp_bytes.len() as u32,
+                            );
+                            let mut packet = Vec::with_capacity(PacketHeader::SIZE + resp_bytes.len());
+                            packet.extend_from_slice(&resp_header.to_bytes());
+                            packet.extend_from_slice(&resp_bytes);
+
+                            let target = SocketAddr::new(source_ip, DISCOVERY_PORT);
+                            let _ = socket.send_to(&packet, target).await;
                         }
                     }
+
+                    Some(PacketType::AnnounceResponse) => {
+                        // Received a UDP unicast response — this device is alive
+                        let payload: AnnouncePayload = match decode_payload(payload_bytes) {
+                            Ok(p) => p,
+                            Err(e) => {
+                                debug!("Failed to decode announce response: {}", e);
+                                continue;
+                            }
+                        };
+
+                        let mut st = state.write().await;
+                        let is_new_or_back = st.discovery.upsert_device(
+                            device_id_str.clone(),
+                            payload.device_name.clone(),
+                            source_ip,
+                            payload.tcp_port,
+                            payload.platform.clone(),
+                        );
+
+                        // This device responded but may not be able to broadcast
+                        st.discovery.mark_responded(&device_id_str);
+
+                        if is_new_or_back {
+                            info!("Device discovered (response): {} at {}", payload.device_name, source_ip);
+                            if let Some(device) = st.discovery.get_device(&device_id_str) {
+                                let _ = app_handle.emit("device-online", device.clone());
+                            }
+                        }
+                    }
+
                     Some(PacketType::Bye) => {
-                        let mut state = state.write().await;
-                        if state.discovery.mark_offline(&device_id_str) {
+                        let mut st = state.write().await;
+                        if st.discovery.mark_offline(&device_id_str) {
                             info!("Device bye: {}", device_id_str);
                             let _ = app_handle.emit(
                                 "device-offline",
@@ -152,6 +198,7 @@ async fn run_listener(
                             );
                         }
                     }
+
                     _ => {
                         debug!("Ignoring non-discovery packet from {}", source_ip);
                     }
@@ -170,13 +217,6 @@ fn create_listen_socket() -> crate::error::Result<tokio::net::UdpSocket> {
 
     let socket = Socket::new(Domain::IPV4, Type::DGRAM, Some(Protocol::UDP))?;
     socket.set_reuse_address(true)?;
-
-    // On Windows, we need SO_REUSEADDR before bind
-    #[cfg(target_os = "windows")]
-    {
-        // Windows-specific: allow port reuse
-        let _ = socket.set_reuse_address(true);
-    }
 
     // On iOS, bind to Wi-Fi interface
     crate::net_util::bind_socket_to_wifi(&socket).ok();

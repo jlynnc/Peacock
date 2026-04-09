@@ -93,7 +93,6 @@ export const useChatStore = defineStore("chat", () => {
       tempMsg.status = "sent";
     } catch (e) {
       tempMsg.status = "failed";
-      tempMsg.content = `${text}\n[ERROR: ${e}]`;
       console.error("Failed to send message:", e);
     }
   }

@@ -26,7 +26,6 @@ async fn run_server(
     app_handle: tauri::AppHandle,
 ) -> crate::error::Result<()> {
     let addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), MESSAGING_PORT);
-    println!("[PEACOCK-DEBUG] TCP server binding to {}", addr);
 
     // On iOS, create listener with IP_BOUND_IF to ensure it listens on Wi-Fi
     #[cfg(target_os = "ios")]
@@ -45,13 +44,11 @@ async fn run_server(
     #[cfg(not(target_os = "ios"))]
     let listener = TcpListener::bind(addr).await?;
 
-    println!("[PEACOCK-DEBUG] TCP server STARTED on port {}", MESSAGING_PORT);
     info!("Messaging server started on TCP port {}", MESSAGING_PORT);
 
     loop {
         match listener.accept().await {
             Ok((mut stream, peer_addr)) => {
-                println!("[PEACOCK-DEBUG] Incoming TCP from {}", peer_addr);
                 debug!("Incoming TCP connection from {}", peer_addr);
                 let state = state.clone();
                 let app = app_handle.clone();
@@ -76,7 +73,6 @@ async fn run_server(
                 });
             }
             Err(e) => {
-                println!("[PEACOCK-DEBUG] TCP accept ERROR: {}", e);
                 error!("TCP accept error: {}", e);
                 tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
             }

@@ -2957,6 +2957,7 @@ dependencies = [
  "chrono",
  "dirs 5.0.1",
  "hostname",
+ "libc",
  "local-ip-address",
  "rusqlite",
  "serde",
