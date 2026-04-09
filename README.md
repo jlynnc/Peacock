@@ -43,11 +43,12 @@ Perfect for collecting API keys, code fragments, meeting notes, or any text you 
 
 ## Features
 
-- **Auto Discovery** — Devices on the same LAN are found automatically, zero configuration
-- **Instant Messaging** — Real-time text chat between devices with persistent history
+- **Auto Discovery** — Devices on the same LAN are found automatically via UDP broadcast + unicast response, zero configuration
+- **Instant Messaging** — Real-time text chat between devices via UDP unicast
 - **File Transfer** — Drag & drop files and folders, with resume support and progress tracking
 - **Snippets** — Create, edit, search, and share text snippets across devices
 - **Quick Copy** — Select any text in a snippet and mark it for instant reuse
+- **Broadcast-Restricted Device Support** — Devices that cannot broadcast (e.g. iOS) are automatically discovered via unicast response and shared through a restricted peers list
 - **Bilingual UI** — Chinese / English, auto-detected from system
 - **Dark Theme** — Follow system or switch manually
 
@@ -64,12 +65,17 @@ Perfect for collecting API keys, code fragments, meeting notes, or any text you 
 ## How It Works
 
 ```
-UDP 52000   — Device discovery (multicast 224.0.1.100 + broadcast)
-TCP 52001   — Messaging / signaling
-Dynamic TCP — File transfer (64KB chunks)
+UDP 52000   — Device discovery (multicast + broadcast + unicast response)
+              Messaging & signaling (text, file offer/accept/reject, snippets)
+Dynamic TCP — File data transfer (64KB chunks)
 ```
 
-Discovery strategy: UDP multicast → subnet broadcast → TCP probe → manual IP
+Discovery mechanism:
+1. Devices broadcast their presence via UDP
+2. Receivers respond with UDP unicast
+3. Devices that only respond but never broadcast are marked as "restricted"
+4. Restricted devices are included in broadcasts by other devices
+5. All devices can discover each other, even if some cannot broadcast
 
 ## Getting Started
 
@@ -103,9 +109,9 @@ src-tauri/target/release/peacock.exe
 
 | Platform | Status |
 |----------|--------|
-| Windows | ✅ Ready |
-| macOS | 🚧 In progress |
-| iOS | 🚧 In progress |
+| Windows | ✅ Released |
+| iOS | ✅ Submitted for review |
+| macOS | 📋 Planned |
 | Android | 📋 Planned |
 | Linux | 📋 Planned |
 
@@ -120,9 +126,9 @@ src/                    # Vue 3 frontend
 └── utils/              #   Utility functions
 
 src-tauri/src/          # Rust backend
-├── discovery/          #   Device discovery (UDP/TCP)
-├── messaging/          #   Messaging system
-├── transfer/           #   File transfer
+├── discovery/          #   Device discovery (UDP broadcast + unicast response)
+├── messaging/          #   Messaging (UDP unicast)
+├── transfer/           #   File transfer (TCP)
 ├── storage/            #   SQLite database
 └── protocol/           #   Binary protocol
 ```
