@@ -137,6 +137,10 @@
 }
 
 html,
+html {
+  background: var(--color-ios-bg, var(--color-bg));
+}
+
 body,
 #app {
   height: 100%;

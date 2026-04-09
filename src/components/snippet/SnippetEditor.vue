@@ -594,10 +594,12 @@ function formatDateTime(ts: number) {
   transition: all 0.15s;
   user-select: none;
 }
-.content-input :deep(.qc-chip:hover) {
-  background: var(--color-primary);
-  color: #fff;
-  border-color: var(--color-primary);
+@media (hover: hover) {
+  .content-input :deep(.qc-chip:hover) {
+    background: var(--color-primary);
+    color: #fff;
+    border-color: var(--color-primary);
+  }
 }
 .content-input :deep(.qc-chip.qc-copied) {
   animation: chip-flash 0.4s ease;
