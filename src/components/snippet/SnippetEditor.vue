@@ -172,38 +172,51 @@ const contextMenuType = ref<"text" | "chip">("text");
 const contextChipEl = ref<HTMLElement | null>(null);
 
 // Handle click on chip to copy
-async function copyChip(target: HTMLElement) {
-  const text = target.dataset.qc || target.textContent || "";
+function copyToClipboard(text: string): boolean {
+  // Method 1: Tauri plugin (async, but we fire-and-forget)
+  writeText(text).catch(() => {});
+
+  // Method 2: execCommand fallback (works in iOS WKWebView)
   try {
-    await writeText(text);
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.cssText = "position:fixed;left:-9999px;top:-9999px;opacity:0";
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(textarea);
+    return ok;
   } catch {
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch (err) {
-      console.error("Failed to copy chip:", err);
-      return;
-    }
+    return false;
   }
+}
+
+function flashChip(target: HTMLElement) {
   target.classList.add("qc-copied");
   setTimeout(() => target.classList.remove("qc-copied"), 500);
 }
 
-async function onContentMouseDown(e: MouseEvent) {
+function onContentMouseDown(e: MouseEvent) {
   const target = e.target as HTMLElement;
   if (target.classList.contains("qc-chip")) {
     e.preventDefault();
     e.stopPropagation();
-    await copyChip(target);
+    const text = target.dataset.qc || target.textContent || "";
+    copyToClipboard(text);
+    flashChip(target);
   }
 }
 
-// iOS: touchend on chip to copy (mousedown doesn't fire on touch)
-async function onContentTouchEnd(e: TouchEvent) {
+// iOS: touchend on chip to copy
+function onContentTouchEnd(e: TouchEvent) {
   const target = e.target as HTMLElement;
   if (target.classList.contains("qc-chip")) {
     e.preventDefault();
     e.stopPropagation();
-    await copyChip(target);
+    const text = target.dataset.qc || target.textContent || "";
+    copyToClipboard(text);
+    flashChip(target);
   }
 }
 
