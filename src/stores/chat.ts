@@ -66,12 +66,26 @@ export const useChatStore = defineStore("chat", () => {
     conv.last_message = tempMsg;
 
     try {
-      // Debug: if text is "/debug", show self info instead of sending
+      // Debug commands
       if (text === "/debug") {
         const { getSelfInfo } = await import("@/utils/ipc");
         const info = await getSelfInfo();
         tempMsg.content = `[DEBUG]\nIP: ${info.ip_addr}\nPort: ${info.tcp_port}\nPlatform: ${info.platform}\nDevice: ${info.device_name}\nID: ${info.device_id}`;
         tempMsg.status = "sent";
+        return;
+      }
+      if (text.startsWith("/udptest")) {
+        const { invoke } = await import("@tauri-apps/api/core");
+        const parts = text.split(" ");
+        const ip = parts[1] || "192.168.31.30";
+        try {
+          const result = await invoke("udp_test", { targetIp: ip });
+          tempMsg.content = `[UDP TEST] ${result}`;
+          tempMsg.status = "sent";
+        } catch (e) {
+          tempMsg.content = `[UDP TEST ERROR] ${e}`;
+          tempMsg.status = "failed";
+        }
         return;
       }
       const msgId = await ipcSendMessage(deviceId, text);

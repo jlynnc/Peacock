@@ -77,6 +77,7 @@ pub fn run() {
             // Discovery
             discovery::commands::get_online_devices,
             discovery::commands::get_self_info,
+            discovery::commands::udp_test,
             // Messaging
             messaging::commands::send_message,
             messaging::commands::get_message_history,
