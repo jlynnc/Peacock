@@ -18,6 +18,13 @@ function onWindowFocus() {
   }
 }
 
+// Restart network when app resumes from background (iOS)
+function onVisibilityChange() {
+  if (document.visibilityState === "visible" && isTauri()) {
+    invoke("restart_discovery").catch(() => {});
+  }
+}
+
 onMounted(() => {
   deviceStore.startListening();
   chatStore.startListening();
@@ -25,6 +32,7 @@ onMounted(() => {
   settingsStore.loadTheme();
   settingsStore.loadSettings();
   window.addEventListener("focus", onWindowFocus);
+  document.addEventListener("visibilitychange", onVisibilityChange);
 });
 
 onUnmounted(() => {
@@ -32,6 +40,7 @@ onUnmounted(() => {
   chatStore.stopListening();
   snippetStore.stopListening();
   window.removeEventListener("focus", onWindowFocus);
+  document.removeEventListener("visibilitychange", onVisibilityChange);
 });
 </script>
 

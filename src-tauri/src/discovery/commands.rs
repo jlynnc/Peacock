@@ -27,6 +27,20 @@ pub async fn get_self_info(
     })
 }
 
+/// Restart discovery (beacon + listener) after app resumes from background
+#[tauri::command]
+pub async fn restart_discovery(
+    state: tauri::State<'_, Arc<RwLock<AppState>>>,
+    app_handle: tauri::AppHandle,
+) -> Result<(), PeacockError> {
+    let st = state.inner().clone();
+    // Re-spawn all network tasks — old tasks will die when their sockets fail
+    crate::discovery::beacon::spawn_beacon(st.clone());
+    crate::discovery::listener::spawn_listener(st.clone(), app_handle.clone());
+    crate::messaging::server::spawn_server(st, app_handle);
+    Ok(())
+}
+
 /// Debug: send a UDP unicast packet to a target IP to test if iOS can send UDP
 #[tauri::command]
 pub async fn udp_test(target_ip: String) -> Result<String, PeacockError> {
