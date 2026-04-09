@@ -8,6 +8,9 @@ import { isTauri } from "@/utils/platform";
 import { useI18n } from "vue-i18n";
 import { ChevronLeft, Paperclip, FolderOpen, Send } from "lucide-vue-next";
 import ChatBubble from "@/components/chat/ChatBubble.vue";
+import { useSwipeBack } from "@/composables/useSwipeBack";
+
+useSwipeBack();
 
 const route = useRoute();
 const router = useRouter();

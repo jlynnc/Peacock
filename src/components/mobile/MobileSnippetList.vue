@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
+import { ref, computed, onMounted, nextTick, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { useSnippetStore } from "@/stores/snippet";
 import { useChatStore } from "@/stores/chat";
-import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { invoke } from "@tauri-apps/api/core";
 import { isTauri } from "@/utils/platform";
-import { Plus, FileText, ChevronRight } from "lucide-vue-next";
+import { Plus, FileText, Edit3, Share2, Pin, Trash2 } from "lucide-vue-next";
 import DevicePickerDialog from "@/components/common/DevicePickerDialog.vue";
 
 const { t } = useI18n();
@@ -37,30 +36,23 @@ function formatTime(ts: number) {
 }
 
 function openSnippet(id: string) {
+  if (swipedId.value) { swipedId.value = null; return; }
+  if (renamingId.value) return;
   store.selectedId = id;
   router.push({ name: "mobile-snippet-edit", params: { id } });
 }
 
+// ── New snippet creation: stay on list, auto-rename ──
+const renamingId = ref<string | null>(null);
+
 async function createNew() {
   await store.createNew();
   if (store.selectedId) {
-    router.push({ name: "mobile-snippet-edit", params: { id: store.selectedId } });
+    // Don't navigate — stay on list and start renaming
+    renamingId.value = store.selectedId;
   }
 }
 
-// ── Context menu ──
-const showMenu = ref(false);
-const menuPos = ref({ x: 0, y: 0 });
-const menuSnippetId = ref<string | null>(null);
-const showDevicePicker = ref(false);
-const confirmDeleteId = ref<string | null>(null);
-const renamingId = ref<string | null>(null);
-
-function closeMenu() {
-  showMenu.value = false;
-}
-
-// Auto-focus rename input
 watch(renamingId, async (id) => {
   if (!id) return;
   await nextTick();
@@ -74,28 +66,66 @@ function finishRename(id: string, value: string) {
   renamingId.value = null;
 }
 
-function menuRename() {
-  if (menuSnippetId.value) renamingId.value = menuSnippetId.value;
-  showMenu.value = false;
+// ── Left-swipe actions ──
+const swipedId = ref<string | null>(null);
+let swipeStartX = 0;
+let swipeStartY = 0;
+let swipeTracking = false;
+let swipeTargetId = "";
+
+function onSwipeStart(snippetId: string, e: TouchEvent) {
+  if (renamingId.value) return;
+  const touch = e.touches[0];
+  swipeStartX = touch.clientX;
+  swipeStartY = touch.clientY;
+  swipeTargetId = snippetId;
+  swipeTracking = true;
 }
 
-async function menuCopyContent() {
-  const s = store.snippets.find((s) => s.id === menuSnippetId.value);
-  if (s) {
-    try { await writeText(s.content); } catch { await navigator.clipboard.writeText(s.content); }
+function onSwipeMove(e: TouchEvent) {
+  if (!swipeTracking) return;
+  const touch = e.touches[0];
+  const dx = swipeStartX - touch.clientX;
+  const dy = Math.abs(touch.clientY - swipeStartY);
+
+  // Must be mostly horizontal swipe left
+  if (dx > 40 && dy < dx * 0.5) {
+    swipedId.value = swipeTargetId;
+    swipeTracking = false;
+  } else if (dy > 20) {
+    // Vertical scroll — cancel swipe
+    swipeTracking = false;
   }
-  showMenu.value = false;
 }
 
-function menuShare() {
-  showMenu.value = false;
+function onSwipeEnd() {
+  swipeTracking = false;
+}
+
+function closeSwipe() {
+  swipedId.value = null;
+}
+
+// ── Actions ──
+const showDevicePicker = ref(false);
+const actionSnippetId = ref<string | null>(null);
+const confirmDeleteId = ref<string | null>(null);
+
+function actionRename(id: string) {
+  swipedId.value = null;
+  renamingId.value = id;
+}
+
+function actionShare(id: string) {
+  swipedId.value = null;
+  actionSnippetId.value = id;
   requestAnimationFrame(() => {
     showDevicePicker.value = true;
   });
 }
 
 async function handleShareConfirm(deviceIds: string[]) {
-  const s = store.snippets.find((s) => s.id === menuSnippetId.value);
+  const s = store.snippets.find((s) => s.id === actionSnippetId.value);
   if (s) {
     for (const deviceId of deviceIds) {
       try {
@@ -108,24 +138,23 @@ async function handleShareConfirm(deviceIds: string[]) {
   showDevicePicker.value = false;
 }
 
-async function menuPinTop() {
-  if (!menuSnippetId.value) return;
-  showMenu.value = false;
+async function actionPinTop(id: string) {
+  swipedId.value = null;
   const items = [...filteredSnippets.value];
-  const idx = items.findIndex((s) => s.id === menuSnippetId.value);
+  const idx = items.findIndex((s) => s.id === id);
   if (idx <= 0) return;
   const [moved] = items.splice(idx, 1);
   items.unshift(moved);
   const ids = items.map((s) => s.id);
   if (isTauri()) {
     try { await invoke("reorder_snippets", { ids }); await store.loadSnippets(); }
-    catch (e) { console.error("Failed to pin snippet:", e); }
+    catch (e) { console.error("Failed to pin:", e); }
   }
 }
 
-function menuDelete() {
-  confirmDeleteId.value = menuSnippetId.value;
-  showMenu.value = false;
+function actionDelete(id: string) {
+  swipedId.value = null;
+  confirmDeleteId.value = id;
 }
 
 async function confirmDelete() {
@@ -133,144 +162,16 @@ async function confirmDelete() {
   confirmDeleteId.value = null;
 }
 
-// ── Touch: two-phase for iOS ──
-// Phase 1 (0-500ms): movement cancels long-press, allows native scroll
-// Phase 2 (after 500ms): long-press activated → drag or menu
-const listRef = ref<HTMLElement | null>(null);
-const dragIndex = ref<number | null>(null);
-const dragOverIndex = ref<number | null>(null);
-const isDragging = ref(false);
-let longPressActivated = false;
-let touchTimer: ReturnType<typeof setTimeout> | null = null;
-let touchStartX = 0;
-let touchStartY = 0;
-let touchItemEl: HTMLElement | null = null;
-let ghostEl: HTMLElement | null = null;
-
-function createGhost(sourceEl: HTMLElement, y: number) {
-  ghostEl = sourceEl.cloneNode(true) as HTMLElement;
-  ghostEl.style.cssText = `
-    position:fixed; width:${sourceEl.offsetWidth}px;
-    left:${sourceEl.getBoundingClientRect().left}px; top:${y - 20}px;
-    pointer-events:none; z-index:1000; opacity:0.85;
-    box-shadow:0 4px 12px rgba(0,0,0,0.15); border-radius:14px;
-    background:var(--color-ios-card); border:2px solid var(--color-primary);
-    transition:none;
-  `;
-  document.body.appendChild(ghostEl);
-}
-
-function moveGhost(y: number) { if (ghostEl) ghostEl.style.top = y - 20 + "px"; }
-function removeGhost() { if (ghostEl) { ghostEl.remove(); ghostEl = null; } }
-
-// Phase 1 listener: detect early scroll movement
-function handleEarlyMove(e: TouchEvent) {
-  const touch = e.touches[0];
-  if (Math.abs(touch.clientX - touchStartX) > 10 || Math.abs(touch.clientY - touchStartY) > 10) {
-    if (touchTimer) { clearTimeout(touchTimer); touchTimer = null; }
-    document.removeEventListener("touchmove", handleEarlyMove);
-  }
-}
-
-// Phase 2 listener: drag reorder after long-press
-function handleDragMove(e: TouchEvent) {
-  if (!longPressActivated) return;
-  const touch = e.touches[0];
-  e.preventDefault();
-
-  if (!isDragging.value && touchItemEl) {
-    isDragging.value = true;
-    createGhost(touchItemEl, touch.clientY);
-  }
-  if (!isDragging.value) return;
-  moveGhost(touch.clientY);
-
-  const list = listRef.value;
-  if (!list) return;
-  const items = list.querySelectorAll(".snippet-row");
-  let hoverIdx: number | null = null;
-  for (let i = 0; i < items.length; i++) {
-    const rect = items[i].getBoundingClientRect();
-    if (touch.clientY < rect.top + rect.height / 2) { hoverIdx = i; break; }
-    hoverIdx = i + 1;
-  }
-  if (hoverIdx !== null && hoverIdx > filteredSnippets.value.length)
-    hoverIdx = filteredSnippets.value.length;
-  dragOverIndex.value = hoverIdx;
-}
-
-function onTouchStart(index: number, snippetId: string, e: TouchEvent) {
-  if ((e.target as HTMLElement).tagName === "INPUT") return;
-  const touch = e.touches[0];
-  touchStartX = touch.clientX;
-  touchStartY = touch.clientY;
-  touchItemEl = e.currentTarget as HTMLElement;
-  dragIndex.value = index;
-  longPressActivated = false;
-
-  // Phase 1: passive listener to detect scroll
-  document.addEventListener("touchmove", handleEarlyMove, { passive: true });
-
-  // After 500ms → long-press activated
-  touchTimer = setTimeout(() => {
-    touchTimer = null;
-    longPressActivated = true;
-    document.removeEventListener("touchmove", handleEarlyMove);
-    document.addEventListener("touchmove", handleDragMove, { passive: false });
-    // Visual feedback
-    if (touchItemEl) touchItemEl.style.opacity = "0.5";
-    store.selectedId = snippetId;
-    menuSnippetId.value = snippetId;
-  }, 500);
-}
-
-async function onTouchEnd() {
-  document.removeEventListener("touchmove", handleEarlyMove);
-  document.removeEventListener("touchmove", handleDragMove);
-  if (touchTimer) { clearTimeout(touchTimer); touchTimer = null; }
-  if (touchItemEl) touchItemEl.style.opacity = "";
-
-  if (longPressActivated && !isDragging.value) {
-    // Long press without drag → show context menu
-    menuPos.value = { x: touchStartX, y: touchStartY };
-    showMenu.value = true;
-  }
-
-  if (isDragging.value && dragIndex.value !== null && dragOverIndex.value !== null && dragIndex.value !== dragOverIndex.value) {
-    const items = [...filteredSnippets.value];
-    const [moved] = items.splice(dragIndex.value, 1);
-    const targetIdx = dragOverIndex.value > dragIndex.value ? dragOverIndex.value - 1 : dragOverIndex.value;
-    items.splice(targetIdx, 0, moved);
-    const ids = items.map((s) => s.id);
-    if (isTauri()) {
-      try { await invoke("reorder_snippets", { ids }); await store.loadSnippets(); }
-      catch (e) { console.error("Failed to reorder:", e); }
-    }
-  }
-
-  removeGhost();
-  dragIndex.value = null;
-  dragOverIndex.value = null;
-  isDragging.value = false;
-  longPressActivated = false;
-  touchItemEl = null;
-}
-
 onMounted(() => {
   store.loadSnippets();
-});
-
-onUnmounted(() => {
-  document.removeEventListener("touchmove", handleEarlyMove);
-  document.removeEventListener("touchmove", handleDragMove);
 });
 </script>
 
 <template>
-  <div class="mobile-snippet-list">
+  <div class="mobile-snippet-list" @click="closeSwipe">
     <div class="page-header">
       <h1 class="page-title">{{ $t('tabs.snippets') }}</h1>
-      <button class="add-btn" @click="createNew">
+      <button class="add-btn" @click.stop="createNew">
         <Plus :size="22" color="#fff" />
       </button>
     </div>
@@ -281,6 +182,7 @@ onUnmounted(() => {
         type="text"
         class="search-input"
         :placeholder="$t('snippet.searchPlaceholder')"
+        @click.stop
       />
     </div>
 
@@ -290,62 +192,62 @@ onUnmounted(() => {
       <p class="empty-hint">{{ $t('snippet.newHintMobile') }}</p>
     </div>
 
-    <div v-else class="snippet-items" ref="listRef">
+    <div v-else class="snippet-items">
       <div
-        v-for="(s, idx) in filteredSnippets"
+        v-for="s in filteredSnippets"
         :key="s.id"
-        :class="[
-          'snippet-row',
-          { 'drag-over': dragOverIndex === idx && dragIndex !== idx },
-          { dragging: dragIndex === idx && isDragging },
-        ]"
-        @touchstart="onTouchStart(idx, s.id, $event)"
-        @touchend="onTouchEnd"
-        @touchcancel="onTouchEnd"
-        @click="openSnippet(s.id)"
+        :class="['snippet-row-wrap', { swiped: swipedId === s.id }]"
       >
-        <div class="snippet-icon-wrap">
-          <FileText :size="20" color="#0d9488" />
+        <div
+          class="snippet-row"
+          @click.stop="openSnippet(s.id)"
+          @touchstart="onSwipeStart(s.id, $event)"
+          @touchmove="onSwipeMove($event)"
+          @touchend="onSwipeEnd"
+        >
+          <div class="snippet-icon-wrap">
+            <FileText :size="20" color="#0d9488" />
+          </div>
+          <div class="snippet-info">
+            <input
+              v-if="renamingId === s.id"
+              class="rename-input"
+              :data-rename-id="s.id"
+              :value="s.title"
+              @blur="finishRename(s.id, ($event.target as HTMLInputElement).value)"
+              @keydown.enter="finishRename(s.id, ($event.target as HTMLInputElement).value)"
+              @keydown.escape="renamingId = null"
+              @click.stop
+              @touchstart.stop
+            />
+            <template v-else>
+              <span class="snippet-title">{{ s.title }}</span>
+              <span class="snippet-time">{{ formatTime(s.updated_at) }}</span>
+            </template>
+          </div>
         </div>
-        <div class="snippet-info">
-          <input
-            v-if="renamingId === s.id"
-            class="rename-input"
-            :data-rename-id="s.id"
-            :value="s.title"
-            @blur="finishRename(s.id, ($event.target as HTMLInputElement).value)"
-            @keydown.enter="finishRename(s.id, ($event.target as HTMLInputElement).value)"
-            @keydown.escape="renamingId = null"
-            @click.stop
-            @touchstart.stop
-          />
-          <template v-else>
-            <span class="snippet-title">{{ s.title }}</span>
-            <span class="snippet-time">{{ formatTime(s.updated_at) }}</span>
-          </template>
+
+        <!-- Swipe action buttons -->
+        <div class="swipe-actions">
+          <button class="swipe-btn rename" @click.stop="actionRename(s.id)">
+            <Edit3 :size="16" color="#fff" />
+            <span>{{ $t('snippet.rename') || '重命名' }}</span>
+          </button>
+          <button class="swipe-btn share" @click.stop="actionShare(s.id)">
+            <Share2 :size="16" color="#fff" />
+            <span>{{ $t('snippet.share') }}</span>
+          </button>
+          <button class="swipe-btn pin" @click.stop="actionPinTop(s.id)">
+            <Pin :size="16" color="#fff" />
+            <span>{{ $t('snippet.pinTop') || '置顶' }}</span>
+          </button>
+          <button class="swipe-btn delete" @click.stop="actionDelete(s.id)">
+            <Trash2 :size="16" color="#fff" />
+            <span>{{ $t('common.delete') }}</span>
+          </button>
         </div>
-        <ChevronRight :size="18" color="#c7c7cc" class="chevron" />
       </div>
     </div>
-
-    <!-- Context menu -->
-    <Teleport to="body">
-      <div v-if="showMenu" class="ctx-overlay" @pointerdown="closeMenu"></div>
-      <div
-        v-if="showMenu"
-        class="ctx-menu"
-        :style="{ left: menuPos.x + 'px', top: menuPos.y + 'px' }"
-        @click.stop
-        @touchstart.stop
-      >
-        <div class="ctx-item" @pointerdown.stop="menuRename">✏️ {{ $t('snippet.rename') || '重命名' }}</div>
-        <div class="ctx-item" @pointerdown.stop="menuCopyContent">📋 {{ $t('snippet.copyContent') }}</div>
-        <div class="ctx-item" @pointerdown.stop="menuShare">📤 {{ $t('snippet.share') }}</div>
-        <div class="ctx-item" @pointerdown.stop="menuPinTop">📌 {{ $t('snippet.pinTop') || '置顶' }}</div>
-        <div class="ctx-sep"></div>
-        <div class="ctx-item ctx-danger" @pointerdown.stop="menuDelete">🗑️ {{ $t('common.delete') }}</div>
-      </div>
-    </Teleport>
 
     <!-- Device picker for share -->
     <DevicePickerDialog
@@ -401,9 +303,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: background 0.15s;
 }
 
 .add-btn:active {
@@ -452,6 +352,14 @@ onUnmounted(() => {
   padding: 6px 16px;
 }
 
+/* Swipe row wrapper */
+.snippet-row-wrap {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  margin-bottom: 8px;
+}
+
 .snippet-row {
   display: flex;
   align-items: center;
@@ -459,27 +367,50 @@ onUnmounted(() => {
   padding: 14px;
   background: var(--color-ios-card);
   border-radius: 14px;
-  margin-bottom: 8px;
-  cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
-  transition: background 0.15s;
-  border: 2px solid transparent;
+  transition: transform 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.snippet-row-wrap.swiped .snippet-row {
+  transform: translateX(-240px);
 }
 
 .snippet-row:active {
   background: var(--color-ios-hover);
 }
 
-.snippet-row.drag-over {
-  border-top: 2px solid var(--color-primary);
+/* Swipe action buttons */
+.swipe-actions {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: stretch;
 }
 
-.snippet-row.dragging {
-  opacity: 0.4;
+.swipe-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 60px;
+  border: none;
+  color: #fff;
+  font-size: 10px;
+  -webkit-tap-highlight-color: transparent;
 }
+
+.swipe-btn.rename { background: #3b82f6; }
+.swipe-btn.share { background: #0d9488; }
+.swipe-btn.pin { background: #f59e0b; }
+.swipe-btn.delete { background: #ef4444; }
 
 .snippet-icon-wrap {
   width: 40px;
@@ -514,10 +445,6 @@ onUnmounted(() => {
   color: var(--color-ios-text-secondary);
 }
 
-.chevron {
-  flex-shrink: 0;
-}
-
 .rename-input {
   width: 100%;
   font-size: 16px;
@@ -529,45 +456,6 @@ onUnmounted(() => {
   background: var(--color-ios-input-bg);
   color: var(--color-ios-text);
   -webkit-appearance: none;
-}
-
-/* Context menu */
-.ctx-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 998;
-}
-
-.ctx-menu {
-  position: fixed;
-  z-index: 999;
-  background: var(--color-ios-card);
-  border-radius: 14px;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.18);
-  padding: 6px;
-  min-width: 160px;
-}
-
-.ctx-item {
-  padding: 10px 14px;
-  font-size: 15px;
-  color: var(--color-ios-text);
-  border-radius: 10px;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.ctx-item:active {
-  background: var(--color-ios-hover);
-}
-
-.ctx-danger {
-  color: #ef4444;
-}
-
-.ctx-sep {
-  height: 1px;
-  background: var(--color-ios-separator);
-  margin: 4px 10px;
 }
 
 /* Delete confirm */

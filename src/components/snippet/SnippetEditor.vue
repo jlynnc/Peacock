@@ -172,25 +172,38 @@ const contextMenuType = ref<"text" | "chip">("text");
 const contextChipEl = ref<HTMLElement | null>(null);
 
 // Handle click on chip to copy
+async function copyChip(target: HTMLElement) {
+  const text = target.dataset.qc || target.textContent || "";
+  try {
+    await writeText(text);
+  } catch {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (err) {
+      console.error("Failed to copy chip:", err);
+      return;
+    }
+  }
+  target.classList.add("qc-copied");
+  setTimeout(() => target.classList.remove("qc-copied"), 500);
+}
+
 async function onContentMouseDown(e: MouseEvent) {
   const target = e.target as HTMLElement;
   if (target.classList.contains("qc-chip")) {
     e.preventDefault();
     e.stopPropagation();
-    const text = target.dataset.qc || target.textContent || "";
-    try {
-      await writeText(text);
-    } catch {
-      // Fallback to navigator.clipboard
-      try {
-        await navigator.clipboard.writeText(text);
-      } catch (err) {
-        console.error("Failed to copy chip:", err);
-        return;
-      }
-    }
-    target.classList.add("qc-copied");
-    setTimeout(() => target.classList.remove("qc-copied"), 500);
+    await copyChip(target);
+  }
+}
+
+// iOS: touchend on chip to copy (mousedown doesn't fire on touch)
+async function onContentTouchEnd(e: TouchEvent) {
+  const target = e.target as HTMLElement;
+  if (target.classList.contains("qc-chip")) {
+    e.preventDefault();
+    e.stopPropagation();
+    await copyChip(target);
   }
 }
 
@@ -384,6 +397,7 @@ function formatDateTime(ts: number) {
         @input="onContentEditableInput"
         @paste="onPaste"
         @mousedown="onContentMouseDown"
+        @touchend="onContentTouchEnd"
         @contextmenu="onContentContextMenu"
         :data-placeholder="$t('snippet.contentPlaceholder')"
       ></div>

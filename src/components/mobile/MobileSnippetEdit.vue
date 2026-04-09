@@ -4,6 +4,9 @@ import { useRoute, useRouter } from "vue-router";
 import { useSnippetStore } from "@/stores/snippet";
 import { ChevronLeft } from "lucide-vue-next";
 import SnippetEditor from "@/components/snippet/SnippetEditor.vue";
+import { useSwipeBack } from "@/composables/useSwipeBack";
+
+useSwipeBack();
 
 const route = useRoute();
 const router = useRouter();

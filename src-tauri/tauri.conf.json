@@ -18,7 +18,8 @@
         "minWidth": 700,
         "minHeight": 500,
         "center": true,
-        "decorations": false
+        "decorations": false,
+        "disableInputAccessoryView": true
       }
     ],
     "security": {
