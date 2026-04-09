@@ -115,6 +115,31 @@ async fn run_listener(
                             if let Some(device) = state.discovery.get_device(&device_id_str) {
                                 let _ = app_handle.emit("device-online", device.clone());
                             }
+
+                            // TCP announce-back: tell the remote device about us
+                            // This is essential on iOS where UDP broadcast is blocked
+                            let self_id = state.device_id_bytes;
+                            let self_name = state.device_name.clone();
+                            let self_platform = state.platform.clone();
+                            let self_port = state.tcp_port;
+                            let target_addr = std::net::SocketAddr::new(source_ip, payload.tcp_port);
+                            drop(state); // release lock before async TCP
+                            tauri::async_runtime::spawn(async move {
+                                let announce = AnnouncePayload {
+                                    device_name: self_name,
+                                    platform: self_platform,
+                                    tcp_port: self_port,
+                                    features: 0xFFFF,
+                                };
+                                if let Ok(payload_bytes) = crate::protocol::wire::encode_payload(&announce) {
+                                    let _ = crate::messaging::client::send_to_device(
+                                        target_addr,
+                                        PacketType::Announce,
+                                        &self_id,
+                                        &announce,
+                                    ).await;
+                                }
+                            });
                         }
                     }
                     Some(PacketType::Bye) => {

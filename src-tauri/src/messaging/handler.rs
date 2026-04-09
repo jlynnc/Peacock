@@ -8,8 +8,8 @@ use tracing::{debug, error, info};
 
 use crate::protocol::header::PacketHeader;
 use crate::protocol::types::{
-    FileAcceptPayload, FileOfferPayload, FileRejectPayload, PacketType, SnippetSharePayload,
-    TextPayload,
+    AnnouncePayload, FileAcceptPayload, FileOfferPayload, FileRejectPayload, PacketType,
+    SnippetSharePayload, TextPayload,
 };
 use crate::protocol::wire::decode_payload;
 use crate::state::AppState;
@@ -38,6 +38,9 @@ pub async fn handle_packet(
         }
         Some(PacketType::FileReject) => {
             handle_file_reject(state, app, &device_id_str, &payload).await;
+        }
+        Some(PacketType::Announce) => {
+            handle_tcp_announce(state, app, &device_id_str, &payload, peer_addr).await;
         }
         Some(PacketType::Clipboard) => {
             debug!("Clipboard from {}", device_id_str);
@@ -266,6 +269,43 @@ async fn handle_snippet_share(
         }
         Err(e) => {
             error!("Failed to decode snippet share: {}", e);
+        }
+    }
+}
+
+/// Handle an Announce packet received via TCP (announce-back from iOS devices)
+async fn handle_tcp_announce(
+    state: &Arc<RwLock<AppState>>,
+    app: &tauri::AppHandle,
+    device_id_str: &str,
+    payload: &[u8],
+    peer_addr: SocketAddr,
+) {
+    match decode_payload::<AnnouncePayload>(payload) {
+        Ok(announce) => {
+            info!(
+                "TCP Announce from {} ({}) at {}",
+                announce.device_name, device_id_str, peer_addr
+            );
+
+            let mut st = state.write().await;
+            let is_new = st.discovery.upsert_device(
+                device_id_str.to_string(),
+                announce.device_name.clone(),
+                peer_addr.ip(),
+                announce.tcp_port,
+                announce.platform.clone(),
+            );
+
+            if is_new {
+                info!("TCP announce discovered: {} at {}", announce.device_name, peer_addr.ip());
+                if let Some(device) = st.discovery.get_device(device_id_str) {
+                    let _ = app.emit("device-online", device.clone());
+                }
+            }
+        }
+        Err(e) => {
+            error!("Failed to decode TCP announce: {}", e);
         }
     }
 }
