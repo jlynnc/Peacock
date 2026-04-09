@@ -18,15 +18,6 @@ function onWindowFocus() {
   }
 }
 
-// When app resumes from background, rebuild TCP server
-// (UDP beacon/listener self-heal automatically, but TCP server's
-// accept() hangs on a dead socket and can't self-detect)
-function onVisibilityChange() {
-  if (document.visibilityState === "visible" && isTauri()) {
-    invoke("rebuild_server").catch(() => {});
-  }
-}
-
 onMounted(() => {
   deviceStore.startListening();
   chatStore.startListening();
@@ -34,7 +25,6 @@ onMounted(() => {
   settingsStore.loadTheme();
   settingsStore.loadSettings();
   window.addEventListener("focus", onWindowFocus);
-  document.addEventListener("visibilitychange", onVisibilityChange);
 });
 
 onUnmounted(() => {
@@ -42,7 +32,6 @@ onUnmounted(() => {
   chatStore.stopListening();
   snippetStore.stopListening();
   window.removeEventListener("focus", onWindowFocus);
-  document.removeEventListener("visibilitychange", onVisibilityChange);
 });
 </script>
 

@@ -116,6 +116,15 @@ async fn run_listener_loop(
                             );
                         }
                     }
+                    // Message/signaling packets — now received via UDP
+                    Some(pt @ (PacketType::Text | PacketType::FileOffer |
+                               PacketType::FileAccept | PacketType::FileReject |
+                               PacketType::SnippetShare)) => {
+                        let peer_addr = SocketAddr::new(source_ip, addr.port());
+                        crate::messaging::handler::handle_udp_packet(
+                            state, app_handle, header, payload_bytes.to_vec(), peer_addr,
+                        ).await;
+                    }
                     _ => {}
                 }
             }

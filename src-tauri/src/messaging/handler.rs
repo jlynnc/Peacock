@@ -2,7 +2,6 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::Emitter;
-use tokio::net::TcpStream;
 use tokio::sync::RwLock;
 use tracing::{debug, error, info};
 
@@ -15,14 +14,13 @@ use crate::protocol::wire::decode_payload;
 use crate::state::AppState;
 use crate::transfer::tracker::TransferStatus;
 
-/// Handle an incoming packet after header + payload have been read
-pub async fn handle_packet(
+/// Handle an incoming packet received via UDP
+pub async fn handle_udp_packet(
     state: &Arc<RwLock<AppState>>,
     app: &tauri::AppHandle,
     header: PacketHeader,
     payload: Vec<u8>,
     peer_addr: SocketAddr,
-    _stream: &mut TcpStream,
 ) {
     let device_id_str = uuid::Uuid::from_bytes(header.device_id).to_string();
 
@@ -39,17 +37,11 @@ pub async fn handle_packet(
         Some(PacketType::FileReject) => {
             handle_file_reject(state, app, &device_id_str, &payload).await;
         }
-        Some(PacketType::Clipboard) => {
-            debug!("Clipboard from {}", device_id_str);
-        }
         Some(PacketType::SnippetShare) => {
             handle_snippet_share(state, app, &device_id_str, &payload).await;
         }
         _ => {
-            debug!(
-                "Unknown packet type {} from {}",
-                header.packet_type, peer_addr
-            );
+            debug!("Unknown packet type {} from {}", header.packet_type, peer_addr);
         }
     }
 }
