@@ -84,7 +84,7 @@ impl AppState {
     }
 }
 
-fn detect_local_ip() -> String {
+pub fn detect_local_ip() -> String {
     // Try to find a real LAN IP by iterating all network interfaces
     if let Ok(interfaces) = local_ip_address::list_afinet_netifas() {
         // Prefer en0 (Wi-Fi on iOS/macOS), then any 192.168.x.x or 10.x.x.x
