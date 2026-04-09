@@ -54,10 +54,9 @@ impl AppState {
             }
         };
 
-        // Detect local IP
-        let ip_addr = local_ip_address::local_ip()
-            .map(|ip| ip.to_string())
-            .unwrap_or_else(|_| "0.0.0.0".to_string());
+        // Detect local IP — on iOS, local_ip() may pick the wrong interface,
+        // so we iterate all interfaces and prefer en0 (Wi-Fi)
+        let ip_addr = detect_local_ip();
 
         // Detect platform
         let platform = detect_platform().to_string();
@@ -83,6 +82,41 @@ impl AppState {
             transfer_semaphore: Arc::new(Semaphore::new(MAX_CONCURRENT_TRANSFERS)),
         })
     }
+}
+
+fn detect_local_ip() -> String {
+    // Try to find a real LAN IP by iterating all network interfaces
+    if let Ok(interfaces) = local_ip_address::list_afinet_netifas() {
+        // Prefer en0 (Wi-Fi on iOS/macOS), then any 192.168.x.x or 10.x.x.x
+        let mut best: Option<(String, String)> = None;
+        for (name, ip) in &interfaces {
+            if ip.is_loopback() {
+                continue;
+            }
+            if let std::net::IpAddr::V4(v4) = ip {
+                let ip_str = v4.to_string();
+                // Skip link-local, APIPA, and non-private addresses
+                if v4.is_link_local() {
+                    continue;
+                }
+                // Prefer en0 (Wi-Fi)
+                if name == "en0" {
+                    return ip_str;
+                }
+                // Otherwise prefer private network IPs
+                if v4.is_private() && best.is_none() {
+                    best = Some((name.clone(), ip_str));
+                }
+            }
+        }
+        if let Some((_, ip)) = best {
+            return ip;
+        }
+    }
+    // Fallback to the crate's default
+    local_ip_address::local_ip()
+        .map(|ip| ip.to_string())
+        .unwrap_or_else(|_| "0.0.0.0".to_string())
 }
 
 fn detect_platform() -> &'static str {
