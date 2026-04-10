@@ -83,6 +83,7 @@ pub fn run() {
             messaging::commands::get_message_history,
             // Transfer (Phase 3 stubs)
             transfer::commands::send_file,
+            transfer::commands::send_file_bytes,
             transfer::commands::send_folder,
             transfer::commands::send_paths,
             transfer::commands::accept_transfer,

@@ -6,7 +6,7 @@ import { useChatStore } from "@/stores/chat";
 import { formatPlatform } from "@/utils/format";
 import { isTauri } from "@/utils/platform";
 import { useI18n } from "vue-i18n";
-import { ChevronLeft, Paperclip, FolderOpen, Send } from "lucide-vue-next";
+import { ChevronLeft, Send, Plus, Image, Camera, FileText, BookOpen, X } from "lucide-vue-next";
 import ChatBubble from "@/components/chat/ChatBubble.vue";
 import { useSwipeBack } from "@/composables/useSwipeBack";
 
@@ -21,7 +21,6 @@ const deviceId = computed(() => route.params.deviceId as string);
 const device = computed(() => deviceStore.devices.get(deviceId.value) || null);
 const messages = computed(() => chatStore.getMessages(deviceId.value));
 
-// Use draft from conversation store so text survives view switches (same as desktop ChatInput)
 const inputText = computed({
   get() {
     return chatStore.getConversation(deviceId.value).draft || "";
@@ -31,8 +30,12 @@ const inputText = computed({
   },
 });
 const messageListRef = ref<HTMLElement | null>(null);
-const { t } = useI18n();
+useI18n();
 const isSendingFile = ref(false);
+const showPlusPanel = ref(false);
+const fileInputRef = ref<HTMLInputElement | null>(null);
+const photoInputRef = ref<HTMLInputElement | null>(null);
+const cameraInputRef = ref<HTMLInputElement | null>(null);
 
 watch(
   () => messages.value.length,
@@ -51,7 +54,6 @@ async function handleSend() {
   const text = inputText.value.trim();
   if (!text) return;
   await chatStore.sendMessage(deviceId.value, text);
-  // Clear draft (writes through the computed setter)
   inputText.value = "";
   const conv = chatStore.getConversation(deviceId.value);
   conv.draft = "";
@@ -65,43 +67,69 @@ function handleKeydown(e: KeyboardEvent) {
   }
 }
 
-async function handleFilePick() {
-  if (!isTauri()) return;
-  const { open } = await import("@tauri-apps/plugin-dialog");
-  const selected = await open({ multiple: true, title: t('transfer.selectFile') });
-  if (!selected) return;
-  const files = Array.isArray(selected) ? selected : [selected];
-  isSendingFile.value = true;
-  try {
-    const { sendFile } = await import("@/utils/ipc");
-    for (const filePath of files) {
-      const fileName = filePath.split(/[/\\]/).pop() || filePath;
-      const transferId = await sendFile(deviceId.value, filePath);
-      chatStore.addFileMessage(deviceId.value, transferId, fileName, 0, "sent", "pending");
-    }
-  } catch (e) {
-    console.error("Failed to send file:", e);
-  } finally {
-    isSendingFile.value = false;
-  }
+function togglePlusPanel() {
+  showPlusPanel.value = !showPlusPanel.value;
 }
 
-async function handleFolderPick() {
-  if (!isTauri()) return;
-  const { open } = await import("@tauri-apps/plugin-dialog");
-  const selected = await open({ directory: true, title: t('transfer.selectFolder') });
-  if (!selected) return;
-  const folderPath = selected as string;
+function pickPhotos() {
+  showPlusPanel.value = false;
+  photoInputRef.value?.click();
+}
+
+function pickCamera() {
+  showPlusPanel.value = false;
+  cameraInputRef.value?.click();
+}
+
+function pickFiles() {
+  showPlusPanel.value = false;
+  fileInputRef.value?.click();
+}
+
+function pickSnippet() {
+  showPlusPanel.value = false;
+  // Navigate to snippet picker — for now go to snippets tab
+  router.push({ name: "mobile-snippets" });
+}
+
+async function handleFileSelected(e: Event, _isPhoto: boolean) {
+  const input = e.target as HTMLInputElement;
+  if (!input.files || input.files.length === 0) return;
+
   isSendingFile.value = true;
   try {
-    const { sendFolder } = await import("@/utils/ipc");
-    const folderName = folderPath.split(/[/\\]/).pop() || folderPath;
-    const transferId = await sendFolder(deviceId.value, folderPath);
-    chatStore.addFileMessage(deviceId.value, transferId, folderName, 0, "sent", "pending");
-  } catch (e) {
-    console.error("Failed to send folder:", e);
+    if (isTauri()) {
+      // On Tauri, we need to get the file path
+      // For files selected via HTML input on iOS, we need to use a different approach
+      // Write the file to a temp location and send from there
+      const { invoke } = await import("@tauri-apps/api/core");
+
+      for (const file of input.files) {
+        const arrayBuffer = await file.arrayBuffer();
+        const bytes = new Uint8Array(arrayBuffer);
+
+        // Write to temp file and send
+        const transferId = await invoke("send_file_bytes", {
+          deviceId: deviceId.value,
+          fileName: file.name,
+          fileData: Array.from(bytes),
+        });
+
+        chatStore.addFileMessage(
+          deviceId.value,
+          transferId as string,
+          file.name,
+          file.size,
+          "sent",
+          "pending",
+        );
+      }
+    }
+  } catch (err) {
+    console.error("Failed to send file:", err);
   } finally {
     isSendingFile.value = false;
+    input.value = ""; // reset input
   }
 }
 
@@ -133,7 +161,7 @@ onMounted(() => {
     </div>
 
     <!-- Messages -->
-    <div ref="messageListRef" class="message-list">
+    <div ref="messageListRef" class="message-list" @click="showPlusPanel = false">
       <div v-if="messages.length === 0" class="no-messages">
         <p>{{ $t('chat.noMessages') }}</p>
       </div>
@@ -148,27 +176,86 @@ onMounted(() => {
     <!-- Input bar -->
     <div class="input-bar">
       <div class="input-wrapper">
-        <button class="tool-btn" @click="handleFilePick" :disabled="isSendingFile">
-          <Paperclip :size="20" />
-        </button>
-        <button class="tool-btn" @click="handleFolderPick" :disabled="isSendingFile">
-          <FolderOpen :size="20" />
-        </button>
         <input
           v-model="inputText"
           class="input-field"
           type="text"
           :placeholder="$t('chat.inputPlaceholderMobile')"
           @keydown="handleKeydown"
+          @focus="showPlusPanel = false"
         />
         <button
-          :class="['send-btn', { active: inputText.trim().length > 0 }]"
+          v-if="inputText.trim().length > 0"
+          class="send-btn active"
           @click="handleSend"
         >
           <Send :size="16" />
         </button>
+        <button
+          v-else
+          :class="['plus-btn', { active: showPlusPanel }]"
+          @click="togglePlusPanel"
+        >
+          <Plus :size="22" v-if="!showPlusPanel" />
+          <X :size="22" v-else />
+        </button>
       </div>
     </div>
+
+    <!-- Plus panel (WeChat style) -->
+    <div v-if="showPlusPanel" class="plus-panel">
+      <div class="panel-grid">
+        <div class="panel-item" @click="pickPhotos">
+          <div class="panel-icon">
+            <Image :size="28" />
+          </div>
+          <span class="panel-label">{{ $t('chat.photos') || '照片' }}</span>
+        </div>
+        <div class="panel-item" @click="pickCamera">
+          <div class="panel-icon">
+            <Camera :size="28" />
+          </div>
+          <span class="panel-label">{{ $t('chat.camera') || '拍摄' }}</span>
+        </div>
+        <div class="panel-item" @click="pickSnippet">
+          <div class="panel-icon">
+            <BookOpen :size="28" />
+          </div>
+          <span class="panel-label">{{ $t('chat.snippet') || '片段' }}</span>
+        </div>
+        <div class="panel-item" @click="pickFiles">
+          <div class="panel-icon">
+            <FileText :size="28" />
+          </div>
+          <span class="panel-label">{{ $t('chat.file') || '文件' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden file inputs -->
+    <input
+      ref="photoInputRef"
+      type="file"
+      accept="image/*,video/*"
+      multiple
+      style="display:none"
+      @change="handleFileSelected($event, true)"
+    />
+    <input
+      ref="cameraInputRef"
+      type="file"
+      accept="image/*"
+      capture="environment"
+      style="display:none"
+      @change="handleFileSelected($event, true)"
+    />
+    <input
+      ref="fileInputRef"
+      type="file"
+      multiple
+      style="display:none"
+      @change="handleFileSelected($event, false)"
+    />
   </div>
 </template>
 
@@ -265,7 +352,6 @@ onMounted(() => {
 
 .input-bar {
   padding: 8px 12px;
-  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
   background: var(--color-ios-card);
   border-top: 0.5px solid var(--color-ios-border);
   flex-shrink: 0;
@@ -274,33 +360,10 @@ onMounted(() => {
 .input-wrapper {
   display: flex;
   align-items: center;
-  gap: 6px;
-  background: var(--color-ios-bg);
+  gap: 8px;
+  background: var(--color-ios-input-bg);
   border-radius: 20px;
-  padding: 6px 8px;
-}
-
-.tool-btn {
-  width: 34px;
-  height: 34px;
-  border: none;
-  background: none;
-  color: var(--color-ios-text-secondary);
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.tool-btn:active {
-  background: rgba(0, 0, 0, 0.05);
-}
-
-.tool-btn:disabled {
-  opacity: 0.3;
+  padding: 6px 6px 6px 14px;
 }
 
 .input-field {
@@ -310,7 +373,7 @@ onMounted(() => {
   background: transparent;
   font-size: 16px;
   color: var(--color-ios-text);
-  padding: 6px 4px;
+  padding: 6px 0;
   -webkit-appearance: none;
 }
 
@@ -318,23 +381,79 @@ onMounted(() => {
   color: var(--color-ios-text-secondary);
 }
 
-.send-btn {
+.send-btn, .plus-btn {
   width: 34px;
   height: 34px;
   border: none;
-  background: var(--color-ios-border);
-  color: #fff;
   border-radius: 50%;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: background 0.15s;
   -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
+}
+
+.send-btn {
+  background: var(--color-ios-border);
+  color: #fff;
 }
 
 .send-btn.active {
   background: var(--color-primary);
+}
+
+.plus-btn {
+  background: none;
+  color: var(--color-ios-text-secondary);
+}
+
+.plus-btn.active {
+  color: var(--color-primary);
+}
+
+/* Plus panel */
+.plus-panel {
+  background: var(--color-ios-card);
+  border-top: 0.5px solid var(--color-ios-border);
+  padding: 16px 24px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  flex-shrink: 0;
+}
+
+.panel-grid {
+  display: flex;
+  gap: 24px;
+}
+
+.panel-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.panel-icon {
+  width: 56px;
+  height: 56px;
+  background: var(--color-ios-input-bg);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-ios-text);
+  transition: background 0.15s;
+}
+
+.panel-item:active .panel-icon {
+  background: var(--color-ios-border);
+}
+
+.panel-label {
+  font-size: 12px;
+  color: var(--color-ios-text-secondary);
 }
 </style>

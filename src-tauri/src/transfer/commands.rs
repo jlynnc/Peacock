@@ -90,6 +90,65 @@ pub async fn send_file(
     Ok(transfer_id)
 }
 
+/// Send a file from raw bytes (for iOS where we get File blobs, not file paths)
+#[tauri::command]
+pub async fn send_file_bytes(
+    state: tauri::State<'_, Arc<RwLock<AppState>>>,
+    device_id: String,
+    file_name: String,
+    file_data: Vec<u8>,
+) -> Result<String, PeacockError> {
+    // Write bytes to a temp file
+    let temp_dir = {
+        let st = state.read().await;
+        st.data_dir.join("temp_send")
+    };
+    std::fs::create_dir_all(&temp_dir)?;
+    let temp_path = temp_dir.join(&file_name);
+    std::fs::write(&temp_path, &file_data)?;
+
+    let file_size = file_data.len() as u64;
+    let transfer_id = uuid::Uuid::new_v4().to_string();
+    let file_path_str = temp_path.to_string_lossy().to_string();
+
+    let (target_addr, self_device_id_bytes) = {
+        let mut st = state.write().await;
+        let device = st
+            .discovery
+            .get_device(&device_id)
+            .ok_or_else(|| PeacockError::DeviceNotFound(device_id.clone()))?;
+
+        let addr: SocketAddr = format!("{}:{}", device.ip_addr, device.tcp_port)
+            .parse()
+            .map_err(|e| PeacockError::Network(format!("Invalid address: {}", e)))?;
+
+        st.transfers.create_send_task(
+            transfer_id.clone(),
+            device_id.clone(),
+            file_name.clone(),
+            file_path_str,
+            file_size,
+            false,
+            1,
+        );
+
+        (addr, st.device_id_bytes)
+    };
+
+    let payload = FileOfferPayload {
+        transfer_id: transfer_id.clone(),
+        file_name,
+        file_size,
+        is_folder: false,
+        file_count: 1,
+    };
+
+    info!("Sending file bytes offer {} to {}", transfer_id, device_id);
+    send_to_device(target_addr, PacketType::FileOffer, &self_device_id_bytes, &payload).await?;
+
+    Ok(transfer_id)
+}
+
 #[tauri::command]
 pub async fn send_folder(
     state: tauri::State<'_, Arc<RwLock<AppState>>>,
