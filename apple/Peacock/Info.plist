@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key>
+    <string>Peacock</string>
+    <key>CFBundleDisplayName</key>
+    <string>Peacock</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleVersion</key>
+    <string>$(CURRENT_PROJECT_VERSION)</string>
+    <key>CFBundleShortVersionString</key>
+    <string>$(MARKETING_VERSION)</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+    <key>UILaunchScreen</key>
+    <dict/>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+    </array>
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>Peacock needs local network access to discover and communicate with nearby devices.</string>
+    <key>NSBonjourServices</key>
+    <array>
+        <string>_peacock._udp</string>
+        <string>_peacock._tcp</string>
+    </array>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Peacock needs photo library access to send photos to other devices.</string>
+    <key>NSCameraUsageDescription</key>
+    <string>Peacock needs camera access to take photos and send them to other devices.</string>
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>Peacock needs to save received photos to your photo library.</string>
+</dict>
+</plist>

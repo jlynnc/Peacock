@@ -1,0 +1,42 @@
+name: Peacock
+options:
+  bundleIdPrefix: com.jlynnc
+  deploymentTarget:
+    iOS: "16.0"
+    macOS: "13.0"
+  xcodeVersion: "16.0"
+  generateEmptyDirectories: true
+
+packages:
+  GRDB:
+    url: https://github.com/groue/GRDB.swift
+    from: "7.0.0"
+
+targets:
+  Peacock:
+    type: application
+    platform: [iOS, macOS]
+    sources:
+      - path: Peacock
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jlynnc.peacock
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: 1
+        INFOPLIST_FILE: Peacock/Info.plist
+        SWIFT_VERSION: "6.0"
+        DEVELOPMENT_TEAM: ""
+        CODE_SIGN_IDENTITY: "Apple Development"
+        ENABLE_USER_SCRIPT_SANDBOXING: false
+      configs:
+        Debug:
+          CODE_SIGN_IDENTITY: "-"
+        Release:
+          CODE_SIGN_IDENTITY: "Apple Development"
+    dependencies:
+      - package: GRDB
+    entitlements:
+      path: Peacock/Peacock.entitlements
+      properties:
+        com.apple.security.network.client: true
+        com.apple.security.network.server: true
