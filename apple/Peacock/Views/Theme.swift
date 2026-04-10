@@ -1,5 +1,19 @@
 import SwiftUI
 
+enum AppTheme: String, CaseIterable {
+    case system
+    case light
+    case dark
+
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system: return nil
+        case .light: return .light
+        case .dark: return .dark
+        }
+    }
+}
+
 extension Color {
     static let peacockTeal = Color(red: 13/255, green: 148/255, blue: 136/255)
     static let peacockTealDark = Color(red: 15/255, green: 118/255, blue: 110/255)

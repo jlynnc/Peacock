@@ -31,6 +31,10 @@
         <string>_peacock._udp</string>
         <string>_peacock._tcp</string>
     </array>
+    <key>UIFileSharingEnabled</key>
+    <true/>
+    <key>LSSupportsOpeningDocumentsInPlace</key>
+    <true/>
     <key>NSPhotoLibraryUsageDescription</key>
     <string>Peacock needs photo library access to send photos to other devices.</string>
     <key>NSCameraUsageDescription</key>

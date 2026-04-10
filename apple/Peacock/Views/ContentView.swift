@@ -9,6 +9,8 @@ struct ContentView: View {
 
     @State private var selectedTab: Tab = .devices
 
+    private var t: (String) -> String { appState.locale.t }
+
     var body: some View {
         TabView(selection: $selectedTab) {
             NavigationStack {
@@ -16,7 +18,7 @@ struct ContentView: View {
             }
             .tabItem {
                 Image(systemName: "wifi")
-                Text("设备")
+                Text(t("tab.devices"))
             }
             .tag(Tab.devices)
             .badge(appState.totalUnread)
@@ -26,7 +28,7 @@ struct ContentView: View {
             }
             .tabItem {
                 Image(systemName: "doc.text")
-                Text("片段")
+                Text(t("tab.snippets"))
             }
             .tag(Tab.snippets)
 
@@ -35,26 +37,10 @@ struct ContentView: View {
             }
             .tabItem {
                 Image(systemName: "gearshape")
-                Text("设置")
+                Text(t("tab.settings"))
             }
             .tag(Tab.settings)
         }
         .tint(Color.peacockTeal)
-        .sheet(item: $appState.pendingFileOffers.first) { offer in
-            FileOfferSheet(offer: offer)
-                .environmentObject(appState)
-        }
-    }
-}
-
-// Extend Array element to be Identifiable for sheet binding
-extension Array {
-    var first: Element? {
-        get { isEmpty ? nil : self[0] }
-        set {
-            if newValue == nil && !isEmpty {
-                removeFirst()
-            }
-        }
     }
 }

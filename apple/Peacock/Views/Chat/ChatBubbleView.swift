@@ -132,6 +132,7 @@ struct ChatBubbleView: View {
 struct ChatFileCardView: View {
     @EnvironmentObject var appState: AppState
     let transferId: String
+    @State private var showShareSheet = false
 
     var task: TransferTask? {
         appState.transferManager.getTask(transferId)
@@ -188,9 +189,27 @@ struct ChatFileCardView: View {
                 }
 
                 if task.status == .completed {
-                    Label("已完成", systemImage: "checkmark.circle.fill")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Color.onlineGreen)
+                    HStack(spacing: 12) {
+                        Label(appState.locale.t("transfer.completed"), systemImage: "checkmark.circle.fill")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.onlineGreen)
+
+                        Spacer()
+
+                        if task.direction == .receive && !task.filePath.isEmpty {
+                            Button {
+                                showShareSheet = true
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "square.and.arrow.up")
+                                        .font(.system(size: 12))
+                                    Text(appState.locale.t("snippets.share"))
+                                        .font(.system(size: 12))
+                                }
+                                .foregroundStyle(Color.peacockTeal)
+                            }
+                        }
+                    }
                 }
 
                 if task.status == .failed {
@@ -208,12 +227,30 @@ struct ChatFileCardView: View {
             .padding(12)
             .frame(minWidth: 260, maxWidth: 340)
             .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
+            .sheet(isPresented: $showShareSheet) {
+                let path = task.filePath
+                if !path.isEmpty {
+                    ShareSheet(items: [URL(fileURLWithPath: path)])
+                }
+            }
         } else {
             Text("[文件]")
                 .foregroundStyle(.secondary)
         }
     }
 }
+
+#if os(iOS)
+struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+#endif
 
 // MARK: - Snippet Card
 

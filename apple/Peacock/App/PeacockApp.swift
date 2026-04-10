@@ -8,6 +8,8 @@ struct PeacockApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(appState)
+                .environmentObject(appState.locale)
+                .preferredColorScheme(appState.theme.colorScheme)
                 .task { appState.start() }
                 .onDisappear { appState.stop() }
         }

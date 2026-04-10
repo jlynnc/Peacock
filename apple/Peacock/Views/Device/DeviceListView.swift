@@ -4,6 +4,8 @@ struct DeviceListView: View {
     @EnvironmentObject var appState: AppState
     @State private var searchText = ""
 
+    private var t: (String) -> String { appState.locale.t }
+
     var filteredDevices: [DeviceInfo] {
         let online = appState.discovery.onlineDevices
         if searchText.isEmpty { return online }
@@ -20,10 +22,10 @@ struct DeviceListView: View {
                     Image(systemName: "wifi.slash")
                         .font(.system(size: 40))
                         .foregroundStyle(.tertiary)
-                    Text("未发现设备")
+                    Text(t("devices.empty"))
                         .font(.headline)
                         .foregroundStyle(.secondary)
-                    Text("确保其他设备在同一局域网中")
+                    Text(t("devices.empty.hint"))
                         .font(.subheadline)
                         .foregroundStyle(.tertiary)
                 }
@@ -40,8 +42,8 @@ struct DeviceListView: View {
             }
         }
         .listStyle(.plain)
-        .searchable(text: $searchText, prompt: "搜索设备")
-        .navigationTitle("设备")
+        .searchable(text: $searchText, prompt: t("devices.search"))
+        .navigationTitle(t("tab.devices"))
         .navigationDestination(for: String.self) { deviceId in
             ChatView(deviceId: deviceId)
         }

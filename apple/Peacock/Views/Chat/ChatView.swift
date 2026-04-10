@@ -14,6 +14,8 @@ struct ChatView: View {
     @State private var showSnippetPicker = false
     @State private var selectedPhotos: [PhotosPickerItem] = []
 
+    private var t: (String) -> String { appState.locale.t }
+
     var device: DeviceInfo? {
         appState.discovery.getDevice(deviceId)
     }
@@ -61,7 +63,7 @@ struct ChatView: View {
                     }
 
                     // Text field
-                    TextField("输入消息...", text: $messageText, axis: .vertical)
+                    TextField(t("chat.input"), text: $messageText, axis: .vertical)
                         .textFieldStyle(.plain)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
@@ -86,6 +88,7 @@ struct ChatView: View {
                 // Plus panel
                 if showPlusPanel {
                     PlusPanelView(
+                        titles: [t("chat.photos"), t("chat.camera"), t("chat.files"), t("chat.snippets")],
                         onPhotos: { showPhotoPicker = true },
                         onCamera: { showCamera = true },
                         onFiles: { showFilePicker = true },
@@ -96,7 +99,7 @@ struct ChatView: View {
             }
             .background(Color(.systemBackground))
         }
-        .navigationTitle(device?.deviceName ?? "聊天")
+        .navigationTitle(device?.deviceName ?? "")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
@@ -244,6 +247,7 @@ struct CameraPicker: UIViewControllerRepresentable {
 // MARK: - Plus Panel
 
 struct PlusPanelView: View {
+    var titles: [String] = ["相册", "拍摄", "文件", "片段"]
     let onPhotos: () -> Void
     let onCamera: () -> Void
     let onFiles: () -> Void
@@ -251,14 +255,14 @@ struct PlusPanelView: View {
 
     var body: some View {
         HStack(spacing: 20) {
-            PlusPanelItem(icon: "photo", title: "相册", color: .blue, action: onPhotos)
-            PlusPanelItem(icon: "camera", title: "相机", color: .orange, action: onCamera)
-            PlusPanelItem(icon: "doc", title: "文件", color: .purple, action: onFiles)
-            PlusPanelItem(icon: "doc.text", title: "片段", color: .green, action: onSnippets)
+            PlusPanelItem(icon: "photo", title: titles[0], color: .blue, action: onPhotos)
+            PlusPanelItem(icon: "camera", title: titles[1], color: .orange, action: onCamera)
+            PlusPanelItem(icon: "doc", title: titles[2], color: .purple, action: onFiles)
+            PlusPanelItem(icon: "doc.text", title: titles[3], color: .green, action: onSnippets)
         }
         .padding(.vertical, 16)
         .padding(.horizontal, 20)
-        .background(Color(.secondarySystemBackground))
+        .background(Color(.systemBackground))
     }
 }
 
@@ -312,7 +316,7 @@ struct SnippetPickerSheet: View {
                     }
                 }
             }
-            .navigationTitle("选择片段")
+            .navigationTitle(appState.locale.t("chat.select_snippet"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

@@ -33,6 +33,12 @@ final class AppState: ObservableObject {
     // File offers pending acceptance
     @Published var pendingFileOffers: [FileOfferInfo] = []
 
+    // Settings
+    @Published var autoAccept: Bool = false
+    @Published var maxConcurrent: Int = 10
+    @Published var theme: AppTheme = .system
+    let locale: LocaleManager
+
     // Network
     var udpService: UDPService!
     private var beaconTimer: Timer?
@@ -83,6 +89,19 @@ final class AppState: ObservableObject {
         let xfer = FileTransferManager()
         self.transferManager = xfer
 
+        // Load settings
+        self.locale = LocaleManager()
+        if let localeStr = try? db.getSetting("locale"), let loc = AppLocale(rawValue: localeStr) {
+            self.locale.current = loc
+        }
+        if let themeStr = try? db.getSetting("theme"), let th = AppTheme(rawValue: themeStr) {
+            self.theme = th
+        }
+        self.autoAccept = (try? db.getSetting("auto_accept")) == "true"
+        if let maxStr = try? db.getSetting("max_concurrent"), let m = Int(maxStr) {
+            self.maxConcurrent = m
+        }
+
         // Load snippets
         self.snippets = (try? db.getAllSnippets()) ?? []
 
@@ -116,12 +135,30 @@ final class AppState: ObservableObject {
         udpService.startListening()
         startBeacon()
         startTimeoutChecker()
+
+        // Restart UDP listener when app returns to foreground (iOS suspends sockets on lock)
+        #if os(iOS)
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.willEnterForegroundNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            log.error("[Peacock] willEnterForeground - restarting UDP listener")
+            self.udpService.stopListening()
+            self.udpService.startListening()
+            // Send an immediate announce so others discover us quickly
+            self.sendAnnounce()
+        }
+        #endif
     }
     private var isStarted = false
 
     func stop() {
         beaconTimer?.invalidate()
         timeoutTimer?.invalidate()
+        #if os(iOS)
+        NotificationCenter.default.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
+        #endif
         udpService.sendBye()
         udpService.stopListening()
     }
@@ -517,9 +554,52 @@ final class AppState: ObservableObject {
         }
     }
 
+    func renameSnippet(_ id: String, title: String) {
+        if let idx = snippets.firstIndex(where: { $0.id == id }) {
+            snippets[idx].title = title
+            snippets[idx].updatedAt = UInt64(Date().timeIntervalSince1970 * 1000)
+            try? db.updateSnippet(id: id, title: title,
+                                  content: snippets[idx].content,
+                                  tag: snippets[idx].tag, note: snippets[idx].note)
+        }
+    }
+
+    func pinSnippetToTop(_ id: String) {
+        // Set sort_order to -1 (lower = higher priority), then reorder all
+        guard let idx = snippets.firstIndex(where: { $0.id == id }) else { return }
+        let snippet = snippets.remove(at: idx)
+        snippets.insert(snippet, at: 0)
+        let ids = snippets.map(\.id)
+        try? db.reorderSnippets(ids: ids)
+        // Refresh sort_order values
+        for (i, _) in snippets.enumerated() {
+            snippets[i].sortOrder = i
+        }
+    }
+
     func updateDeviceName(_ name: String) {
         deviceName = name
         try? db.setSetting("device_name", value: name)
+    }
+
+    func updateAutoAccept(_ value: Bool) {
+        autoAccept = value
+        try? db.setSetting("auto_accept", value: value ? "true" : "false")
+    }
+
+    func updateMaxConcurrent(_ value: Int) {
+        maxConcurrent = value
+        try? db.setSetting("max_concurrent", value: "\(value)")
+    }
+
+    func updateTheme(_ value: AppTheme) {
+        theme = value
+        try? db.setSetting("theme", value: value.rawValue)
+    }
+
+    func updateLocale(_ value: AppLocale) {
+        locale.current = value
+        try? db.setSetting("locale", value: value.rawValue)
     }
 
     // MARK: - Helpers

@@ -2,12 +2,15 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject var appState: AppState
-    @State private var editingName: String = ""
+
+    @State private var editingName = ""
     @State private var isEditingName = false
+
+    private var t: (String) -> String { appState.locale.t }
 
     var body: some View {
         List {
-            // Device info
+            // Device info card
             Section {
                 HStack(spacing: 14) {
                     ZStack {
@@ -19,7 +22,7 @@ struct SettingsView: View {
                                     endPoint: .bottomTrailing
                                 )
                             )
-                        Text("ME")
+                        Text("Me")
                             .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(.white)
                     }
@@ -27,8 +30,10 @@ struct SettingsView: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         if isEditingName {
-                            TextField("设备名称", text: $editingName, onCommit: {
-                                appState.updateDeviceName(editingName)
+                            TextField(t("settings.device_name"), text: $editingName, onCommit: {
+                                if !editingName.isEmpty {
+                                    appState.updateDeviceName(editingName)
+                                }
                                 isEditingName = false
                             })
                             .textFieldStyle(.roundedBorder)
@@ -64,36 +69,83 @@ struct SettingsView: View {
                     }
                 }
                 .padding(.vertical, 4)
+            } footer: {
+                Text(t("settings.device_name.hint"))
             }
 
-            // Settings
-            Section("传输") {
+            // Transfer
+            Section(t("settings.transfer")) {
                 HStack {
-                    Label("下载目录", systemImage: "folder")
+                    Label(t("settings.download_dir"), systemImage: "folder")
                     Spacer()
-                    Text(appState.transferManager.downloadDir.lastPathComponent)
+                    Text("Peacock Downloads")
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
+
+                Toggle(isOn: Binding(
+                    get: { appState.autoAccept },
+                    set: { appState.updateAutoAccept($0) }
+                )) {
+                    Label(t("settings.auto_accept"), systemImage: "arrow.down.doc")
+                }
+                .tint(Color.peacockTeal)
+
+                Picker(selection: Binding(
+                    get: { appState.maxConcurrent },
+                    set: { appState.updateMaxConcurrent($0) }
+                )) {
+                    ForEach([1, 3, 5, 10, 20, 50], id: \.self) { value in
+                        Text("\(value)").tag(value)
+                    }
+                } label: {
+                    Label(t("settings.max_concurrent"), systemImage: "arrow.left.arrow.right")
+                }
             }
 
-            Section("关于") {
+            // Appearance
+            Section(t("settings.appearance")) {
+                Picker(selection: Binding(
+                    get: { appState.theme },
+                    set: { appState.updateTheme($0) }
+                )) {
+                    Text(t("settings.theme.system")).tag(AppTheme.system)
+                    Text(t("settings.theme.light")).tag(AppTheme.light)
+                    Text(t("settings.theme.dark")).tag(AppTheme.dark)
+                } label: {
+                    Label(t("settings.theme"), systemImage: "moon.circle")
+                }
+
+                Picker(selection: Binding(
+                    get: { appState.locale.current },
+                    set: { appState.updateLocale($0) }
+                )) {
+                    ForEach(AppLocale.allCases, id: \.self) { loc in
+                        Text(loc.displayName).tag(loc)
+                    }
+                } label: {
+                    Label(t("settings.language"), systemImage: "globe")
+                }
+            }
+
+            // About
+            Section(t("settings.about")) {
                 HStack {
-                    Label("版本", systemImage: "info.circle")
+                    Label(t("settings.version"), systemImage: "info.circle")
                     Spacer()
-                    Text("1.0.0")
+                    Text("v0.1.0")
                         .foregroundStyle(.secondary)
                 }
 
                 HStack {
-                    Label("协议版本", systemImage: "network")
+                    Label(t("settings.protocol"), systemImage: "network")
                     Spacer()
                     Text("PCOK v1")
                         .foregroundStyle(.secondary)
                 }
 
                 HStack {
-                    Label("设备 ID", systemImage: "qrcode")
+                    Label(t("settings.device_id"), systemImage: "qrcode")
                     Spacer()
                     Text(String(appState.deviceId.prefix(8)) + "...")
                         .font(.system(size: 13, design: .monospaced))
@@ -101,6 +153,6 @@ struct SettingsView: View {
                 }
             }
         }
-        .navigationTitle("设置")
+        .navigationTitle(t("settings.title"))
     }
 }

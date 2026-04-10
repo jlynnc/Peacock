@@ -3,6 +3,12 @@ import SwiftUI
 struct SnippetListView: View {
     @EnvironmentObject var appState: AppState
     @State private var searchText = ""
+    @State private var renamingId: String?
+    @State private var renameText = ""
+    @State private var shareSnippetId: String?
+
+    private var t: (String) -> String { appState.locale.t }
+    @State private var navigationPath = NavigationPath()
 
     var filteredSnippets: [Snippet] {
         if searchText.isEmpty { return appState.snippets }
@@ -19,10 +25,10 @@ struct SnippetListView: View {
                     Image(systemName: "doc.text")
                         .font(.system(size: 40))
                         .foregroundStyle(.tertiary)
-                    Text("暂无片段")
+                    Text(t("snippets.empty"))
                         .font(.headline)
                         .foregroundStyle(.secondary)
-                    Text("点击右上角 + 创建新片段")
+                    Text(t("snippets.empty.hint"))
                         .font(.subheadline)
                         .foregroundStyle(.tertiary)
                 }
@@ -32,22 +38,57 @@ struct SnippetListView: View {
                 .listRowSeparator(.hidden)
             } else {
                 ForEach(filteredSnippets) { snippet in
-                    NavigationLink(value: snippet.id) {
-                        SnippetRowView(snippet: snippet)
-                    }
-                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                        Button(role: .destructive) {
-                            appState.deleteSnippet(snippet.id)
-                        } label: {
-                            Label("删除", systemImage: "trash")
+                    if renamingId == snippet.id {
+                        // Inline rename
+                        TextField("片段名称", text: $renameText, onCommit: {
+                            appState.renameSnippet(snippet.id, title: renameText)
+                            renamingId = nil
+                        })
+                        .font(.system(size: 15, weight: .semibold))
+                        .textFieldStyle(.roundedBorder)
+                        .onAppear {
+                            renameText = snippet.title
+                        }
+                    } else {
+                        NavigationLink(value: snippet.id) {
+                            SnippetRowView(snippet: snippet)
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button(role: .destructive) {
+                                appState.deleteSnippet(snippet.id)
+                            } label: {
+                                Label(t("snippets.delete"), systemImage: "trash")
+                            }
+
+                            Button {
+                                appState.pinSnippetToTop(snippet.id)
+                            } label: {
+                                Label(t("snippets.pin"), systemImage: "pin")
+                            }
+                            .tint(.orange)
+
+                            Button {
+                                shareSnippetId = snippet.id
+                            } label: {
+                                Label(t("snippets.share"), systemImage: "square.and.arrow.up")
+                            }
+                            .tint(Color.peacockTeal)
+
+                            Button {
+                                renamingId = snippet.id
+                                renameText = snippet.title
+                            } label: {
+                                Label(t("snippets.rename"), systemImage: "pencil")
+                            }
+                            .tint(.blue)
                         }
                     }
                 }
             }
         }
         .listStyle(.plain)
-        .searchable(text: $searchText, prompt: "搜索片段")
-        .navigationTitle("片段")
+        .searchable(text: $searchText, prompt: t("snippets.search"))
+        .navigationTitle(t("tab.snippets"))
         .navigationDestination(for: String.self) { snippetId in
             SnippetEditorView(snippetId: snippetId)
         }
@@ -55,12 +96,26 @@ struct SnippetListView: View {
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     appState.createSnippet()
+                    // Auto-enter rename mode for the new snippet
+                    if let newId = appState.selectedSnippetId {
+                        renamingId = newId
+                        renameText = "新建片段"
+                    }
                 } label: {
                     Image(systemName: "plus")
                 }
             }
         }
+        .sheet(item: $shareSnippetId) { snippetId in
+            DevicePickerSheet(snippetId: snippetId)
+                .environmentObject(appState)
+        }
     }
+}
+
+// Make String work with sheet(item:)
+extension String: @retroactive Identifiable {
+    public var id: String { self }
 }
 
 struct SnippetRowView: View {
@@ -78,7 +133,7 @@ struct SnippetRowView: View {
                     .foregroundStyle(.tertiary)
             }
             if !snippet.content.isEmpty {
-                Text(snippet.content.prefix(60))
+                Text(snippet.content.replacingOccurrences(of: "[[", with: "").replacingOccurrences(of: "]]", with: "").prefix(60))
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
