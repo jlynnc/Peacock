@@ -110,10 +110,10 @@ src-tauri/target/release/peacock.exe
 | 平台 | 状态 |
 |------|------|
 | Windows | ✅ 已发布 |
+| Linux | ✅ 已发布 |
 | iOS | ✅ 已提交审核 |
 | macOS | 📋 计划中 |
 | Android | 📋 计划中 |
-| Linux | 📋 计划中 |
 
 ## 项目结构
 
