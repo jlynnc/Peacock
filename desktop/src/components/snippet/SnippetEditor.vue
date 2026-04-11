@@ -170,6 +170,8 @@ function onNoteInput() {
 
 const contextMenuType = ref<"text" | "chip">("text");
 const contextChipEl = ref<HTMLElement | null>(null);
+let savedRange: Range | null = null;
+let savedSelectionText = "";
 
 // Handle click on chip to copy
 function copyToClipboard(text: string): boolean {
@@ -237,6 +239,9 @@ function onContentContextMenu(e: MouseEvent) {
   const sel = window.getSelection();
   if (sel && sel.toString().length > 0) {
     e.preventDefault();
+    // Save selection before menu opens (Linux webkit clears selection on menu click)
+    savedSelectionText = sel.toString();
+    savedRange = sel.getRangeAt(0).cloneRange();
     contextMenuType.value = "text";
     contextChipEl.value = null;
     contentMenuPos.value = { x: e.clientX, y: e.clientY };
@@ -247,13 +252,12 @@ function onContentContextMenu(e: MouseEvent) {
 async function copySelection() {
   if (contextMenuType.value === "chip" && contextChipEl.value) {
     const text = contextChipEl.value.dataset.qc || contextChipEl.value.textContent || "";
-    await writeText(text);
-    contextChipEl.value.classList.add("qc-copied");
-    setTimeout(() => contextChipEl.value?.classList.remove("qc-copied"), 500);
+    copyToClipboard(text);
+    flashChip(contextChipEl.value);
   } else {
-    const sel = window.getSelection();
-    const text = sel?.toString() || "";
-    if (text) await writeText(text);
+    // Use saved selection text (Linux webkit may clear selection on menu click)
+    const text = savedSelectionText || window.getSelection()?.toString() || "";
+    if (text) copyToClipboard(text);
   }
   showContentMenu.value = false;
 }
@@ -278,19 +282,15 @@ function unmarkQuickCopy() {
 }
 
 function markAsQuickCopy() {
-  const sel = window.getSelection();
-  if (!sel || sel.rangeCount === 0) {
-    showContentMenu.value = false;
-    return;
-  }
-  const selectedText = sel.toString();
-  if (!selectedText) {
+  // Use saved range (Linux webkit clears selection when menu is clicked)
+  const range = savedRange || (window.getSelection()?.rangeCount ? window.getSelection()!.getRangeAt(0) : null);
+  const selectedText = savedSelectionText || window.getSelection()?.toString() || "";
+  if (!range || !selectedText) {
     showContentMenu.value = false;
     return;
   }
 
   // Replace selected text with a chip span
-  const range = sel.getRangeAt(0);
   range.deleteContents();
   const chip = document.createElement("span");
   chip.className = "qc-chip";
@@ -306,7 +306,9 @@ function markAsQuickCopy() {
     scheduleSave();
   }
 
-  sel.removeAllRanges();
+  window.getSelection()?.removeAllRanges();
+  savedRange = null;
+  savedSelectionText = "";
   showContentMenu.value = false;
 }
 

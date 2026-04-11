@@ -1,0 +1,1 @@
+{"default":{"identifier":"default","description":"Default capabilities for Peacock","local":true,"windows":["main"],"permissions":["core:default","core:window:allow-minimize","core:window:allow-toggle-maximize","core:window:allow-close","dialog:default","notification:default","fs:default","clipboard-manager:default","os:default","autostart:default","shell:allow-open"]}}
