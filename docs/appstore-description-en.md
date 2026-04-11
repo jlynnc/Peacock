@@ -17,13 +17,13 @@ ZERO CONFIGURATION
 Simply open Peacock on any device connected to the same Wi-Fi network. Devices discover each other automatically — no accounts, no pairing, no QR codes.
 
 INSTANT MESSAGING
-Send text messages between devices in real time. Messages are stored locally and never leave your network.
+Send text messages between devices in real time. Messages stay on your local network and never touch any server.
 
 FILE & FOLDER TRANSFER
-Drag and drop files or folders to send them. Transfers run at full LAN speed with progress tracking and resume support.
+Send photos, files, and folders directly between devices at full LAN speed with progress tracking and resume support.
 
 SNIPPETS & QUICK COPY
-Create and manage text snippets — code fragments, API keys, notes, or any reusable text. Select any text and tap the floating mark button to save it instantly. Share snippets to any device with one tap.
+Create and manage text snippets — code fragments, API keys, notes, or any reusable text. Mark any text for instant one-tap copying. Share snippets to any device with one tap.
 
 PRIVATE BY DESIGN
 - All data stays on your local network
@@ -32,15 +32,16 @@ PRIVATE BY DESIGN
 - Open source (MIT License)
 
 FEATURES
-- Auto device discovery (UDP multicast + broadcast)
+- Auto device discovery via UDP broadcast
 - Real-time text messaging
-- File and folder transfer with drag & drop
+- Photo, file, and folder transfer
 - Resume interrupted transfers
 - Text snippet manager with quick copy
 - Bilingual interface (English / Chinese)
 - Dark theme support
+- Works with Windows and Linux PCs
 
-Peacock is built with Tauri, Vue, and Rust for maximum performance and minimal resource usage.
+Built with native Swift and SwiftUI for the best iOS experience.
 
 ## Keywords (100 chars max)
 file transfer,LAN,local,share,send,wifi,airdrop,message,snippet,clipboard
