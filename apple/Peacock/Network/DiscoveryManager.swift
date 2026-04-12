@@ -96,4 +96,8 @@ final class DiscoveryManager: ObservableObject {
     func getDevice(_ deviceId: String) -> DeviceInfo? {
         devices[deviceId]
     }
+
+    func isBroadcastRestricted(_ deviceId: String) -> Bool {
+        broadcastRestricted.contains(deviceId)
+    }
 }

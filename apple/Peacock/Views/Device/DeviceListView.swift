@@ -123,6 +123,9 @@ struct DeviceRowView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
+                    Circle()
+                        .fill(appState.discovery.isBroadcastRestricted(device.deviceId) ? Color.orange : Color.onlineGreen)
+                        .frame(width: 8, height: 8)
                     Text(device.deviceName)
                         .font(.system(size: 16, weight: .semibold))
                         .lineLimit(1)
