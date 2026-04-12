@@ -1,5 +1,7 @@
 package com.peacock.app
 
+import android.content.Context
+import android.net.wifi.WifiManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -16,10 +18,18 @@ import com.peacock.app.ui.screens.*
 
 class MainActivity : ComponentActivity() {
     private lateinit var appState: AppState
+    private var multicastLock: WifiManager.MulticastLock? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // Acquire multicast lock so Android doesn't filter out UDP multicast packets
+        val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        multicastLock = wifiManager.createMulticastLock("peacock_multicast").apply {
+            setReferenceCounted(true)
+            acquire()
+        }
 
         appState = AppState(applicationContext)
         appState.init()
@@ -31,9 +41,23 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        // Re-acquire multicast lock if released
+        if (multicastLock?.isHeld == false) {
+            multicastLock?.acquire()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // Don't stop UDP service — it needs to keep running to receive FileAccept etc.
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         appState.stop()
+        multicastLock?.release()
     }
 }
 
@@ -42,6 +66,17 @@ fun MainScreen(appState: AppState) {
     var selectedTab by remember { mutableIntStateOf(0) }
     var chatDeviceId by remember { mutableStateOf<String?>(null) }
     var editSnippetId by remember { mutableStateOf<String?>(null) }
+
+    // Show pending file offer dialog
+    val pendingOffer = appState.pendingOffers.firstOrNull()
+    if (pendingOffer != null) {
+        FileOfferDialog(
+            task = pendingOffer,
+            senderName = appState.devices[pendingOffer.deviceId]?.deviceName ?: "未知设备",
+            onAccept = { appState.acceptFileOffer(pendingOffer.transferId) },
+            onReject = { appState.rejectFileOffer(pendingOffer.transferId) }
+        )
+    }
 
     if (chatDeviceId != null) {
         ChatScreen(

@@ -37,7 +37,7 @@ class UDPService(
     }
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    private var socket: DatagramSocket? = null
+    private var socket: MulticastSocket? = null
     private val devices = ConcurrentHashMap<String, DeviceInfo>()
     private val broadcastRestricted = ConcurrentHashMap.newKeySet<String>()
     private val hasBroadcast = ConcurrentHashMap.newKeySet<String>()
@@ -82,17 +82,15 @@ class UDPService(
     private suspend fun runListener() {
         while (scope.isActive) {
             try {
-                socket = DatagramSocket(null).apply {
+                socket = MulticastSocket(null).apply {
                     reuseAddress = true
                     broadcast = true
                     bind(InetSocketAddress(DISCOVERY_PORT))
-                }
-                // Join multicast
-                try {
-                    val multicastSocket = MulticastSocket(DISCOVERY_PORT)
-                    multicastSocket.joinGroup(InetAddress.getByName(MULTICAST_ADDR))
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to join multicast: ${e.message}")
+                    try {
+                        joinGroup(InetAddress.getByName(MULTICAST_ADDR))
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to join multicast: ${e.message}")
+                    }
                 }
 
                 Log.i(TAG, "UDP listener started on port $DISCOVERY_PORT")
