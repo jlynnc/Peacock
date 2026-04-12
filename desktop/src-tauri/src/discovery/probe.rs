@@ -129,7 +129,7 @@ async fn run_probe(
                                 if let Ok(announce) = decode_payload::<AnnouncePayload>(&payload_bytes) {
                                     let device_id = uuid::Uuid::from_bytes(header.device_id).to_string();
                                     let mut st = state.write().await;
-                                    let is_new = st.discovery.upsert_device(
+                                    let is_new = st.discovery.upsert_from_response(
                                         device_id.clone(),
                                         announce.device_name.clone(),
                                         IpAddr::V4(ip),
@@ -138,8 +138,8 @@ async fn run_probe(
                                     );
                                     if is_new {
                                         info!("TCP probe discovered: {} at {}", announce.device_name, ip);
-                                        if let Some(device) = st.discovery.get_device(&device_id) {
-                                            let _ = app.emit("device-online", device.clone());
+                                        if let Some(device) = st.discovery.get_device_with_status(&device_id) {
+                                            let _ = app.emit("device-online", &device);
                                         }
                                     }
                                 }

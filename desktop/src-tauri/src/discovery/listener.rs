@@ -16,7 +16,7 @@ pub fn spawn_listener(
     state: Arc<RwLock<AppState>>,
     app_handle: tauri::AppHandle,
 ) {
-    // Timeout checker — runs independently, doesn't need socket
+    // Timeout checker
     let state_clone = state.clone();
     let app_clone = app_handle.clone();
     tauri::async_runtime::spawn(async move {
@@ -32,7 +32,7 @@ pub fn spawn_listener(
         }
     });
 
-    // Listener — self-healing: rebuilds socket on failure
+    // Listener — self-healing
     tauri::async_runtime::spawn(async move {
         loop {
             match run_listener_loop(&state, &app_handle).await {
@@ -116,10 +116,9 @@ async fn run_listener_loop(
                             );
                         }
                     }
-                    // Message/signaling packets — now received via UDP
-                    Some(pt @ (PacketType::Text | PacketType::FileOffer |
+                    Some(PacketType::Text | PacketType::FileOffer |
                                PacketType::FileAccept | PacketType::FileReject |
-                               PacketType::SnippetShare)) => {
+                               PacketType::SnippetShare) => {
                         let peer_addr = SocketAddr::new(source_ip, addr.port());
                         crate::messaging::handler::handle_udp_packet(
                             state, app_handle, header, payload_bytes.to_vec(), peer_addr,
@@ -132,7 +131,6 @@ async fn run_listener_loop(
                 consecutive_errors += 1;
                 error!("UDP recv error: {}", e);
                 if consecutive_errors >= 5 {
-                    // Socket is dead — return error to trigger rebuild
                     return Err(crate::error::PeacockError::Network(
                         format!("Listener socket dead after {} errors: {}", consecutive_errors, e),
                     ));
@@ -143,6 +141,10 @@ async fn run_listener_loop(
     }
 }
 
+/// Handle Announce broadcast.
+/// Do NOT add broadcaster to device list.
+/// Only: 1) send AnnounceResponse, 2) check if we're in their restricted_peers (Rule 2),
+/// 3) update last_broadcast_at if device already known.
 async fn handle_announce(
     state: &Arc<RwLock<AppState>>,
     app_handle: &tauri::AppHandle,
@@ -160,34 +162,29 @@ async fn handle_announce(
     };
 
     let mut st = state.write().await;
-    let is_new_or_back = st.discovery.upsert_device(
-        device_id_str.to_string(),
-        payload.device_name.clone(),
-        source_ip,
-        payload.tcp_port,
-        payload.platform.clone(),
-    );
 
-    st.discovery.mark_can_broadcast(device_id_str);
+    // If device already known, update last_broadcast_at (proves it can broadcast)
+    st.discovery.mark_received_broadcast(device_id_str);
 
-    if is_new_or_back {
-        info!("Device discovered (broadcast): {} at {}", payload.device_name, source_ip);
-        if let Some(device) = st.discovery.get_device(device_id_str) {
-            let _ = app_handle.emit("device-online", device.clone());
-        }
-    }
-
-    // Merge restricted peers from the broadcast
+    // Rule 2: check if WE are in their restricted_peers → self-discovery
     let self_id_str = st.device_id.clone();
-    let new_peers = st.discovery.merge_restricted_peers(&payload.restricted_peers, &self_id_str);
-    for peer_id in &new_peers {
-        if let Some(device) = st.discovery.get_device(peer_id) {
-            info!("Device discovered (restricted list): {} at {}", device.device_name, device.ip_addr);
-            let _ = app_handle.emit("device-online", device.clone());
+    if payload.restricted_peers.iter().any(|p| p.device_id == self_id_str) {
+        let is_new = st.discovery.upsert_from_restricted_self_discovery(
+            device_id_str.to_string(),
+            payload.device_name.clone(),
+            source_ip,
+            payload.tcp_port,
+            payload.platform.clone(),
+        );
+        if is_new {
+            info!("Device discovered (self in restricted_peers): {} at {}", payload.device_name, source_ip);
+            if let Some(device) = st.discovery.get_device_with_status(device_id_str) {
+                let _ = app_handle.emit("device-online", &device);
+            }
         }
     }
 
-    // UDP unicast response
+    // Send AnnounceResponse (so they discover us via Rule 1)
     let self_name = st.device_name.clone();
     let self_platform = st.platform.clone();
     let self_port = st.tcp_port;
@@ -216,6 +213,7 @@ async fn handle_announce(
     }
 }
 
+/// Handle AnnounceResponse — someone replied to OUR broadcast (Rule 1).
 async fn handle_announce_response(
     state: &Arc<RwLock<AppState>>,
     app_handle: &tauri::AppHandle,
@@ -232,7 +230,9 @@ async fn handle_announce_response(
     };
 
     let mut st = state.write().await;
-    let is_new_or_back = st.discovery.upsert_device(
+
+    // Rule 1: they responded to our broadcast → add them
+    let is_new_or_back = st.discovery.upsert_from_response(
         device_id_str.to_string(),
         payload.device_name.clone(),
         source_ip,
@@ -240,12 +240,14 @@ async fn handle_announce_response(
         payload.platform.clone(),
     );
 
-    st.discovery.mark_responded(device_id_str);
+    // Restricted status is determined by refresh_restricted_status() in beacon cycle.
+    // New devices start with last_broadcast_at=0, so they'll be restricted until
+    // we receive their broadcast.
 
     if is_new_or_back {
         info!("Device discovered (response): {} at {}", payload.device_name, source_ip);
-        if let Some(device) = st.discovery.get_device(device_id_str) {
-            let _ = app_handle.emit("device-online", device.clone());
+        if let Some(device) = st.discovery.get_device_with_status(device_id_str) {
+            let _ = app_handle.emit("device-online", &device);
         }
     }
 }

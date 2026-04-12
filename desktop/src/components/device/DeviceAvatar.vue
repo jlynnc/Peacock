@@ -7,8 +7,9 @@ const props = withDefaults(
     deviceId: string;
     platform: DevicePlatform;
     online?: boolean;
+    restricted?: boolean;
   }>(),
-  { online: true }
+  { online: true, restricted: false }
 );
 
 const platformIcon = computed(() => {
@@ -38,7 +39,7 @@ const bgColor = computed(() => {
 <template>
   <div class="device-avatar" :style="{ background: bgColor }">
     <span class="avatar-icon">{{ platformIcon }}</span>
-    <span v-if="online" class="online-dot"></span>
+    <span v-if="online" :class="['online-dot', { restricted }]"></span>
   </div>
 </template>
 
@@ -67,5 +68,9 @@ const bgColor = computed(() => {
   background: #22c55e;
   border: 2px solid #fafafa;
   border-radius: 50%;
+}
+
+.online-dot.restricted {
+  background: #f97316;
 }
 </style>

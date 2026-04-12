@@ -35,7 +35,8 @@ async fn run_beacon_loop(state: &Arc<RwLock<AppState>>) -> crate::error::Result<
     loop {
         tick.tick().await;
 
-        let st = state.read().await;
+        let mut st = state.write().await;
+        st.discovery.refresh_restricted_status();
         let restricted_peers = st.discovery.get_restricted_peers();
         let payload = AnnouncePayload {
             device_name: st.device_name.clone(),
