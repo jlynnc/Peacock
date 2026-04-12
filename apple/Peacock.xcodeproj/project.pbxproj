@@ -317,7 +317,7 @@
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					B326F27A22CD350A157682CB = {
-						DevelopmentTeam = "";
+						DevelopmentTeam = G58K5HLBG5;
 					};
 				};
 			};
@@ -443,7 +443,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = G58K5HLBG5;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = Peacock/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -451,7 +451,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jlynnc.peacock;
+				PRODUCT_BUNDLE_IDENTIFIER = com.peacock.app;
 				PRODUCT_NAME = Peacock;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 6.0;
@@ -474,7 +474,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jlynnc.peacock;
+				PRODUCT_BUNDLE_IDENTIFIER = com.peacock.app;
 				PRODUCT_NAME = Peacock;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
@@ -617,7 +617,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jlynnc.peacock;
+				PRODUCT_BUNDLE_IDENTIFIER = com.peacock.app;
 				PRODUCT_NAME = Peacock;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 6.0;
@@ -633,7 +633,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = G58K5HLBG5;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = Peacock/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -641,7 +641,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jlynnc.peacock;
+				PRODUCT_BUNDLE_IDENTIFIER = com.peacock.app;
 				PRODUCT_NAME = Peacock;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 6.0;

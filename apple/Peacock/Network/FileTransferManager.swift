@@ -2,7 +2,7 @@ import Foundation
 import Network
 import os.log
 
-private let xferLog = Logger(subsystem: "com.jlynnc.peacock", category: "Transfer")
+private let xferLog = Logger(subsystem: "com.peacock.app", category: "Transfer")
 
 /// Manages file transfer tasks: sending and receiving files via TCP.
 @MainActor
