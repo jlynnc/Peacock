@@ -113,6 +113,7 @@ enum L10n {
         "common.delete": "删除",
         "common.copy": "复制",
         "common.save": "保存",
+        "common.copied": "已复制",
     ]
 
     static let en: [String: String] = [
@@ -191,5 +192,6 @@ enum L10n {
         "common.delete": "Delete",
         "common.copy": "Copy",
         "common.save": "Save",
+        "common.copied": "Copied",
     ]
 }

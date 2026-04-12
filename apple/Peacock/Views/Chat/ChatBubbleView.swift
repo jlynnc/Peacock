@@ -1,8 +1,10 @@
 import SwiftUI
+import QuickLook
 
 struct ChatBubbleView: View {
     @EnvironmentObject var appState: AppState
     let message: ChatMessage
+    @State private var showCopied = false
 
     var isSent: Bool { message.direction == .sent }
 
@@ -91,7 +93,7 @@ struct ChatBubbleView: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .background(
-                isSent ? Color.bubbleSent : Color(.tertiarySystemFill),
+                (showCopied ? Color.peacockTeal.opacity(0.25) : (isSent ? Color.bubbleSent : Color(.tertiarySystemFill))),
                 in: RoundedRectangle(cornerRadius: 18)
             )
             .overlay(
@@ -101,6 +103,14 @@ struct ChatBubbleView: View {
                         lineWidth: 0.5
                     )
             )
+            .animation(.easeInOut(duration: 0.2), value: showCopied)
+            .onTapGesture {
+                UIPasteboard.general.string = message.content
+                showCopied = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                    showCopied = false
+                }
+            }
     }
 
     private var timeString: String {
@@ -133,14 +143,20 @@ struct ChatFileCardView: View {
     @EnvironmentObject var appState: AppState
     let transferId: String
     @State private var showShareSheet = false
+    @State private var previewURL: URL?
 
     var task: TransferTask? {
         appState.transferManager.getTask(transferId)
     }
 
+    var isCompleted: Bool {
+        task?.status == .completed && !(task?.filePath.isEmpty ?? true)
+    }
+
     var body: some View {
         if let task {
             VStack(alignment: .leading, spacing: 8) {
+                // File info row — tappable when completed
                 HStack(spacing: 10) {
                     Image(systemName: FormatUtils.fileIcon(for: task.fileName))
                         .font(.system(size: 22))
@@ -157,8 +173,21 @@ struct ChatFileCardView: View {
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
+
+                    if isCompleted {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    if isCompleted {
+                        previewURL = URL(fileURLWithPath: task.filePath)
+                    }
                 }
 
+                // Progress
                 if task.status == .active {
                     ProgressView(value: task.progress)
                         .tint(Color.peacockTeal)
@@ -173,21 +202,23 @@ struct ChatFileCardView: View {
                     }
                 }
 
+                // Accept/Reject buttons
                 if task.status == .pending && task.direction == .receive {
                     HStack(spacing: 8) {
-                        Button("接收") { appState.acceptTransfer(transferId) }
+                        Button(appState.locale.t("transfer.accept")) { appState.acceptTransfer(transferId) }
                             .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(.white)
                             .padding(.horizontal, 14)
                             .padding(.vertical, 6)
                             .background(Color.peacockTeal, in: RoundedRectangle(cornerRadius: 8))
 
-                        Button("拒绝") { appState.rejectTransfer(transferId) }
+                        Button(appState.locale.t("transfer.reject")) { appState.rejectTransfer(transferId) }
                             .font(.system(size: 13))
                             .foregroundStyle(Color.dangerRed)
                     }
                 }
 
+                // Completed — preview + share
                 if task.status == .completed {
                     HStack(spacing: 12) {
                         Label(appState.locale.t("transfer.completed"), systemImage: "checkmark.circle.fill")
@@ -196,30 +227,26 @@ struct ChatFileCardView: View {
 
                         Spacer()
 
-                        if task.direction == .receive && !task.filePath.isEmpty {
+                        if !task.filePath.isEmpty {
                             Button {
                                 showShareSheet = true
                             } label: {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "square.and.arrow.up")
-                                        .font(.system(size: 12))
-                                    Text(appState.locale.t("snippets.share"))
-                                        .font(.system(size: 12))
-                                }
-                                .foregroundStyle(Color.peacockTeal)
+                                Image(systemName: "square.and.arrow.up")
+                                    .font(.system(size: 14))
+                                    .foregroundStyle(Color.peacockTeal)
                             }
                         }
                     }
                 }
 
                 if task.status == .failed {
-                    Label("失败", systemImage: "xmark.circle.fill")
+                    Label(appState.locale.t("transfer.failed"), systemImage: "xmark.circle.fill")
                         .font(.system(size: 12))
                         .foregroundStyle(Color.dangerRed)
                 }
 
                 if task.status == .rejected {
-                    Label("已拒绝", systemImage: "nosign")
+                    Label(appState.locale.t("transfer.rejected"), systemImage: "nosign")
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                 }
@@ -228,29 +255,17 @@ struct ChatFileCardView: View {
             .frame(minWidth: 260, maxWidth: 340)
             .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
             .sheet(isPresented: $showShareSheet) {
-                let path = task.filePath
-                if !path.isEmpty {
-                    ShareSheet(items: [URL(fileURLWithPath: path)])
+                if !task.filePath.isEmpty {
+                    ShareSheet(items: [URL(fileURLWithPath: task.filePath)])
                 }
             }
+            .quickLookPreview($previewURL)
         } else {
             Text("[文件]")
                 .foregroundStyle(.secondary)
         }
     }
 }
-
-#if os(iOS)
-struct ShareSheet: UIViewControllerRepresentable {
-    let items: [Any]
-
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: items, applicationActivities: nil)
-    }
-
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
-}
-#endif
 
 // MARK: - Snippet Card
 
@@ -280,20 +295,20 @@ struct ChatSnippetCardView: View {
 
                 if direction == .received {
                     HStack(spacing: 8) {
-                        Button("保存") { appState.acceptSnippetOffer(offerId) }
+                        Button(appState.locale.t("common.save")) { appState.acceptSnippetOffer(offerId) }
                             .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(.white)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 5)
                             .background(Color.peacockTeal, in: RoundedRectangle(cornerRadius: 6))
 
-                        Button("忽略") { appState.rejectSnippetOffer(offerId) }
+                        Button(appState.locale.t("common.cancel")) { appState.rejectSnippetOffer(offerId) }
                             .font(.system(size: 13))
                             .foregroundStyle(.secondary)
                     }
                 }
             } else {
-                Text(direction == .sent ? "已发送" : "已处理")
+                Text(direction == .sent ? appState.locale.t("transfer.completed") : appState.locale.t("transfer.completed"))
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
             }
@@ -303,3 +318,17 @@ struct ChatSnippetCardView: View {
         .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
     }
 }
+
+// MARK: - Share Sheet
+
+#if os(iOS)
+struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+#endif

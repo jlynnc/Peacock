@@ -9,69 +9,84 @@ struct SettingsView: View {
     private var t: (String) -> String { appState.locale.t }
 
     var body: some View {
-        List {
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Text(t("settings.title"))
+                    .font(.system(size: 28, weight: .bold))
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 12)
+
             // Device info card
-            Section {
-                HStack(spacing: 14) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(
-                                LinearGradient(
-                                    colors: [Color.peacockTeal, Color.peacockTealDark],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.peacockTeal, Color.peacockTealDark],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
                             )
-                        Text("Me")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(.white)
-                    }
-                    .frame(width: 56, height: 56)
+                        )
+                    Text("Me")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(.white)
+                }
+                .frame(width: 56, height: 56)
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        if isEditingName {
-                            TextField(t("settings.device_name"), text: $editingName, onCommit: {
-                                if !editingName.isEmpty {
-                                    appState.updateDeviceName(editingName)
-                                }
-                                isEditingName = false
-                            })
-                            .textFieldStyle(.roundedBorder)
-                        } else {
-                            Text(appState.deviceName)
-                                .font(.system(size: 17, weight: .semibold))
-                        }
-
-                        HStack(spacing: 4) {
-                            Text(NetworkUtils.currentPlatform.uppercased())
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundStyle(Color.peacockTeal)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.peacockTealLight, in: RoundedRectangle(cornerRadius: 4))
-
-                            if let ip = NetworkUtils.getLocalIPAddress() {
-                                Text(ip)
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 4) {
+                    if isEditingName {
+                        TextField(t("settings.device_name"), text: $editingName, onCommit: {
+                            if !editingName.isEmpty {
+                                appState.updateDeviceName(editingName)
                             }
-                        }
+                            isEditingName = false
+                        })
+                        .textFieldStyle(.roundedBorder)
+                    } else {
+                        Text(appState.deviceName)
+                            .font(.system(size: 17, weight: .semibold))
                     }
 
-                    Spacer()
-
-                    Button {
-                        editingName = appState.deviceName
-                        isEditingName.toggle()
-                    } label: {
-                        Image(systemName: "pencil")
+                    HStack(spacing: 4) {
+                        Text(NetworkUtils.currentPlatform.uppercased())
+                            .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(Color.peacockTeal)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.peacockTealLight, in: RoundedRectangle(cornerRadius: 4))
+
+                        if let ip = NetworkUtils.getLocalIPAddress() {
+                            Text(ip)
+                                .font(.system(size: 12))
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
-                .padding(.vertical, 4)
-            } footer: {
-                Text(t("settings.device_name.hint"))
+
+                Spacer()
+
+                Button {
+                    editingName = appState.deviceName
+                    isEditingName.toggle()
+                } label: {
+                    Image(systemName: "pencil")
+                        .foregroundStyle(Color.peacockTeal)
+                }
             }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 4)
+
+            Text(t("settings.device_name.hint"))
+                .font(.system(size: 12))
+                .foregroundStyle(.tertiary)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
+
+        List {
 
             // Transfer
             Section(t("settings.transfer")) {
@@ -153,6 +168,7 @@ struct SettingsView: View {
                 }
             }
         }
-        .navigationTitle(t("settings.title"))
+        }
+        .navigationBarHidden(true)
     }
 }
