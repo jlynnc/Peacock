@@ -114,9 +114,7 @@ struct ChatBubbleView: View {
     }
 
     private var timeString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        return formatter.string(from: message.date)
+        FormatUtils.timeFormatter.string(from: message.date)
     }
 
     @ViewBuilder
@@ -308,7 +306,7 @@ struct ChatSnippetCardView: View {
                     }
                 }
             } else {
-                Text(direction == .sent ? appState.locale.t("transfer.completed") : appState.locale.t("transfer.completed"))
+                Text(appState.locale.t("transfer.completed"))
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
             }

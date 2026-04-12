@@ -37,10 +37,26 @@ extension Font {
 }
 
 struct FormatUtils {
+    nonisolated(unsafe) private static let byteCountFormatter: ByteCountFormatter = {
+        let f = ByteCountFormatter()
+        f.countStyle = .file
+        return f
+    }()
+
+    nonisolated(unsafe) private static let relativeTimeFormatter: RelativeDateTimeFormatter = {
+        let f = RelativeDateTimeFormatter()
+        f.unitsStyle = .abbreviated
+        return f
+    }()
+
+    nonisolated(unsafe) static let timeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm"
+        return f
+    }()
+
     static func fileSize(_ bytes: UInt64) -> String {
-        let formatter = ByteCountFormatter()
-        formatter.countStyle = .file
-        return formatter.string(fromByteCount: Int64(bytes))
+        byteCountFormatter.string(fromByteCount: Int64(bytes))
     }
 
     static func speed(_ bytesPerSecond: UInt64) -> String {
@@ -48,9 +64,7 @@ struct FormatUtils {
     }
 
     static func relativeTime(_ date: Date) -> String {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: date, relativeTo: Date())
+        relativeTimeFormatter.localizedString(for: date, relativeTo: Date())
     }
 
     static func fileIcon(for fileName: String) -> String {

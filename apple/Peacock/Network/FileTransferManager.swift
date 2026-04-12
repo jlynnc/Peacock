@@ -73,7 +73,6 @@ final class FileTransferManager: ObservableObject {
             xferLog.error("[Transfer] startReceiving: task not found \(transferId)")
             throw PeacockError.transferNotFound
         }
-        xferLog.error("[Transfer] startReceiving: \(task.fileName) size=\(task.fileSize)")
 
         let filePath: URL
         if task.isFolder {
@@ -133,8 +132,6 @@ final class FileTransferManager: ObservableObject {
         }
         let port = UInt16(bigEndian: boundAddr.sin_port)
 
-        xferLog.error("[Transfer] TCP listener ready on port \(port)")
-
         let capturedTask = task
         let transferIdCopy = transferId
 
@@ -161,8 +158,6 @@ final class FileTransferManager: ObservableObject {
                 return
             }
 
-            xferLog.error("[Transfer] Incoming TCP connection accepted (fd=\(clientFd))")
-
             await MainActor.run {
                 self.tasks[transferIdCopy]?.status = .active
                 self.tasks[transferIdCopy]?.receiverPort = port
@@ -186,7 +181,6 @@ final class FileTransferManager: ObservableObject {
     }
 
     private func doReceiveSingleFileWithFd(transferId: String, fd: Int32, task: TransferTask, filePath: URL) async {
-        xferLog.error("[Transfer] doReceiveSingleFileWithFd: \(filePath.lastPathComponent)")
         let partPath = filePath.appendingPathExtension("part")
 
         if !FileManager.default.fileExists(atPath: partPath.path) {
@@ -231,7 +225,6 @@ final class FileTransferManager: ObservableObject {
             task.status = totalReceived >= task.fileSize ? .completed : .failed
             task.filePath = filePath.path
         }
-        xferLog.error("[Transfer] Receive done: \(totalReceived)/\(task.fileSize)")
     }
 
     private func doReceiveFolderWithFd(transferId: String, fd: Int32, task: TransferTask, destDir: URL) async {
@@ -307,152 +300,6 @@ final class FileTransferManager: ObservableObject {
             received += n
         }
         return received
-    }
-
-    private func doReceive(transferId: String, connection: NWConnection, task: TransferTask) async {
-        connection.start(queue: .global(qos: .userInitiated))
-
-        let filePath = URL(fileURLWithPath: task.filePath)
-
-        if task.isFolder {
-            await doReceiveFolder(transferId: transferId, connection: connection, task: task, destDir: filePath)
-        } else {
-            await doReceiveSingleFile(transferId: transferId, connection: connection, task: task, filePath: filePath)
-        }
-    }
-
-    private func doReceiveSingleFile(transferId: String, connection: NWConnection,
-                                     task: TransferTask, filePath: URL) async {
-        xferLog.error("[Transfer] doReceiveSingleFile: \(filePath.lastPathComponent) to \(filePath.path)")
-        let partPath = filePath.appendingPathExtension("part")
-
-        // Create or open .part file
-        if !FileManager.default.fileExists(atPath: partPath.path) {
-            FileManager.default.createFile(atPath: partPath.path, contents: nil)
-        }
-        guard let handle = FileHandle(forWritingAtPath: partPath.path) else {
-            await MainActor.run { task.status = .failed }
-            connection.cancel()
-            return
-        }
-
-        if task.resumeOffset > 0 {
-            handle.seekToEndOfFile()
-        }
-
-        var totalReceived = task.resumeOffset
-        var lastProgressTime = Date()
-
-        // Receive loop
-        while true {
-            let result: Data? = await withCheckedContinuation { cont in
-                connection.receive(minimumIncompleteLength: 1, maximumLength: NetworkConstants.fileChunkSize) { data, _, isComplete, error in
-                    if let data, !data.isEmpty {
-                        cont.resume(returning: data)
-                    } else if isComplete || error != nil {
-                        cont.resume(returning: nil)
-                    } else {
-                        cont.resume(returning: nil)
-                    }
-                }
-            }
-
-            guard let chunk = result else { break }
-
-            handle.write(chunk)
-            totalReceived += UInt64(chunk.count)
-
-            let now = Date()
-            if now.timeIntervalSince(lastProgressTime) >= 0.1 {
-                let speed = UInt64(Double(totalReceived - task.resumeOffset) /
-                                   max(now.timeIntervalSince(lastProgressTime), 0.001))
-                await MainActor.run {
-                    task.transferredBytes = totalReceived
-                    task.speedBps = speed
-                }
-                lastProgressTime = now
-            }
-
-            if totalReceived >= task.fileSize { break }
-        }
-
-        handle.closeFile()
-
-        // Rename .part to final
-        try? FileManager.default.moveItem(at: partPath, to: filePath)
-
-        await MainActor.run {
-            task.transferredBytes = totalReceived
-            task.status = .completed
-            task.filePath = filePath.path
-        }
-        connection.cancel()
-    }
-
-    private func doReceiveFolder(transferId: String, connection: NWConnection,
-                                 task: TransferTask, destDir: URL) async {
-        // First, read manifest: [u64 LE manifest_len][manifest JSON]
-        guard let lenData = await receiveExact(connection: connection, count: 8) else {
-            await MainActor.run { task.status = .failed }
-            connection.cancel()
-            return
-        }
-        let manifestLen = lenData.withUnsafeBytes { $0.load(as: UInt64.self) }
-        let manifestLength = UInt64(littleEndian: manifestLen)
-
-        guard let manifestData = await receiveExact(connection: connection, count: Int(manifestLength)) else {
-            await MainActor.run { task.status = .failed }
-            connection.cancel()
-            return
-        }
-
-        guard let entries = try? JSONDecoder().decode([FolderEntry].self, from: manifestData) else {
-            await MainActor.run { task.status = .failed }
-            connection.cancel()
-            return
-        }
-
-        task.folderManifest = entries
-
-        // Create destination directory
-        try? FileManager.default.createDirectory(at: destDir, withIntermediateDirectories: true)
-
-        var totalReceived: UInt64 = 0
-        let startTime = Date()
-
-        for entry in entries {
-            let fileURL = destDir.appendingPathComponent(entry.relativePath)
-            let parentDir = fileURL.deletingLastPathComponent()
-            try? FileManager.default.createDirectory(at: parentDir, withIntermediateDirectories: true)
-
-            FileManager.default.createFile(atPath: fileURL.path, contents: nil)
-            guard let handle = FileHandle(forWritingAtPath: fileURL.path) else { continue }
-
-            var fileReceived: UInt64 = 0
-            while fileReceived < entry.size {
-                let toRead = min(UInt64(NetworkConstants.fileChunkSize), entry.size - fileReceived)
-                guard let chunk = await receiveExact(connection: connection, count: Int(toRead)) else {
-                    break
-                }
-                handle.write(chunk)
-                fileReceived += UInt64(chunk.count)
-                totalReceived += UInt64(chunk.count)
-
-                let elapsed = Date().timeIntervalSince(startTime)
-                let speed = elapsed > 0 ? UInt64(Double(totalReceived) / elapsed) : 0
-                await MainActor.run {
-                    task.transferredBytes = totalReceived
-                    task.speedBps = speed
-                }
-            }
-            handle.closeFile()
-        }
-
-        await MainActor.run {
-            task.transferredBytes = totalReceived
-            task.status = .completed
-        }
-        connection.cancel()
     }
 
     // MARK: - Sending
@@ -659,25 +506,6 @@ final class FileTransferManager: ObservableObject {
                 cont.resume(returning: error == nil)
             })
         }
-    }
-
-    private func receiveExact(connection: NWConnection, count: Int) async -> Data? {
-        var buffer = Data()
-        while buffer.count < count {
-            let remaining = count - buffer.count
-            let chunk: Data? = await withCheckedContinuation { cont in
-                connection.receive(minimumIncompleteLength: 1, maximumLength: remaining) { data, _, _, error in
-                    if let data, !data.isEmpty {
-                        cont.resume(returning: data)
-                    } else {
-                        cont.resume(returning: nil)
-                    }
-                }
-            }
-            guard let chunk else { return nil }
-            buffer.append(chunk)
-        }
-        return buffer
     }
 
     private func uniquePath(for url: URL) -> URL {

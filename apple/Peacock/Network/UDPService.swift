@@ -68,7 +68,6 @@ final class UDPService: @unchecked Sendable {
         setsockopt(listenFd, SOL_SOCKET, SO_BROADCAST, &yes, socklen_t(MemoryLayout<Int32>.size))
 
         isRunning = true
-        udpLog.error("[UDP] Listener ready on port \(NetworkConstants.udpPort)")
 
         // Start receive loop on background thread
         let fd = listenFd
@@ -113,8 +112,6 @@ final class UDPService: @unchecked Sendable {
                 // Ignore own packets
                 let senderId = NetworkUtils.bytesToUUID(header.deviceId)
                 guard senderId != ownId else { continue }
-
-                udpLog.error("[UDP] Received type=\(header.packetType.rawValue) from \(sourceIP) sender=\(senderId.prefix(8))")
 
                 // Extract payload
                 let payloadStart = PacketHeader.size
