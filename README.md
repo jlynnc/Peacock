@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="src-tauri/icons/icon_256.png" width="80" />
+  <img src="desktop/src-tauri/icons/icon_256.png" width="80" />
 </p>
 
 <h1 align="center">Peacock</h1>
@@ -16,8 +16,8 @@
 <p align="center">
   <img src="https://img.shields.io/badge/version-0.1.0-teal" />
   <img src="https://img.shields.io/badge/Tauri-v2-blue" />
-  <img src="https://img.shields.io/badge/Vue-3-green" />
-  <img src="https://img.shields.io/badge/Rust-orange" />
+  <img src="https://img.shields.io/badge/Swift-iOS-orange" />
+  <img src="https://img.shields.io/badge/Kotlin-Android-green" />
   <img src="https://img.shields.io/badge/license-MIT-lightgrey" />
 </p>
 
@@ -29,113 +29,97 @@
 |:---:|:---:|
 | ![snippets](docs/screenshots/snippets.png) | ![chat](docs/screenshots/chat.png) |
 
-## Highlights
-
-### Quick Copy — Select, Mark, Done
-
-The standout feature of Peacock. When editing a snippet, simply select any text and tap the floating **mark button** to instantly save it as a reusable snippet. No copy-paste, no switching apps — just select and mark.
-
-<p align="center">
-  <img src="docs/screenshots/snippets.png" width="600" />
-</p>
-
-Perfect for collecting API keys, code fragments, meeting notes, or any text you need across devices.
-
 ## Features
 
-- **Auto Discovery** — Devices on the same LAN are found automatically via UDP broadcast + unicast response, zero configuration
-- **Instant Messaging** — Real-time text chat between devices via UDP unicast
-- **File Transfer** — Drag & drop files and folders, with resume support and progress tracking
-- **Snippets** — Create, edit, search, and share text snippets across devices
-- **Quick Copy** — Select any text in a snippet and mark it for instant reuse
-- **Broadcast-Restricted Device Support** — Devices that cannot broadcast (e.g. iOS) are automatically discovered via unicast response and shared through a restricted peers list
-- **Bilingual UI** — Chinese / English, auto-detected from system
+- **Auto Discovery** — Devices on the same LAN found automatically via UDP broadcast + unicast response
+- **Instant Messaging** — Real-time text chat between devices via UDP
+- **File Transfer** — Send files and folders with resume support and progress tracking
+- **Snippets** — Create, edit, search, and share text snippets with inline quick-copy chips
+- **Broadcast-Restricted Device Support** — Devices that cannot broadcast are discovered via restricted peers list
 - **Dark Theme** — Follow system or switch manually
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | Vue 3 + TypeScript + TailwindCSS 4 |
-| Backend | Rust + Tauri v2 |
-| Database | SQLite (bundled) |
-| Protocol | Custom binary (32-byte header, bincode) |
-| Icons | Lucide |
+| Component | Desktop | iOS | Android |
+|-----------|---------|-----|---------|
+| UI | Vue 3 + TailwindCSS | SwiftUI | Jetpack Compose |
+| Backend | Rust + Tauri v2 | Swift | Kotlin |
+| Database | SQLite (rusqlite) | SQLite | SQLite |
+| Protocol | Custom binary (PCOK header + bincode) | Same | Same |
 
 ## How It Works
 
 ```
-UDP 52000   — Device discovery (multicast + broadcast + unicast response)
-              Messaging & signaling (text, file offer/accept/reject, snippets)
-Dynamic TCP — File data transfer (64KB chunks)
+UDP 52000   — Device discovery + messaging + signaling
+Dynamic TCP — File data transfer (256KB chunks)
 ```
 
-Discovery mechanism:
-1. Devices broadcast their presence via UDP
-2. Receivers respond with UDP unicast
-3. Devices that only respond but never broadcast are marked as "restricted"
-4. Restricted devices are included in broadcasts by other devices
-5. All devices can discover each other, even if some cannot broadcast
-
-## Getting Started
-
-### Prerequisites
-
-- [Node.js](https://nodejs.org/) >= 18
-- [Rust](https://rustup.rs/) >= 1.75
-- [Tauri CLI](https://tauri.app/) v2
-
-### Development
-
-```bash
-# Install dependencies
-npm install
-
-# Start dev mode
-npm run tauri dev
-```
-
-### Build
-
-```bash
-# Build release
-npx tauri build
-
-# Output (Windows)
-src-tauri/target/release/peacock.exe
-```
+Discovery rules:
+1. I broadcast → they respond → I add them to device list
+2. I receive broadcast → I find myself in their restricted_peers → I add them
+3. Receiving a broadcast does NOT add the broadcaster (only send response)
 
 ## Platforms
 
-| Platform | Status |
-|----------|--------|
-| Windows | ✅ Released |
-| Linux | ✅ Released |
-| iOS | ✅ Submitted for review |
-| macOS | 📋 Planned |
-| Android | 📋 Planned |
+| Platform | Status | Technology |
+|----------|--------|-----------|
+| Windows | ✅ Released | Tauri v2 (Rust + Vue 3) |
+| Linux | ✅ Released | Tauri v2 (Rust + Vue 3) |
+| iOS | ✅ App Store | Native Swift / SwiftUI |
+| Android | ✅ Released (APK) | Native Kotlin / Compose |
+| macOS | 📋 Planned | Swift (shared with iOS) |
+
+## Download
+
+**[GitHub Releases](https://github.com/jlynnc/Peacock/releases/tag/v0.1.0)**
+
+- `peacock.exe` — Windows (portable)
+- `Peacock_0.1.0_x64-setup.exe` — Windows (installer)
+- `Peacock_0.1.0_amd64.deb` — Linux (Debian/Ubuntu)
+- `Peacock-0.1.0-1.x86_64.rpm` — Linux (Fedora/RHEL)
+- `Peacock_0.1.0.apk` — Android
+- iOS — Search "Peacock" on App Store
 
 ## Project Structure
 
 ```
-src/                    # Vue 3 frontend
-├── components/         #   UI components (chat, device, snippet, transfer, mobile)
-├── stores/             #   Pinia state management
-├── types/              #   TypeScript type definitions
-├── i18n/               #   Internationalization (zh-CN, en)
-└── utils/              #   Utility functions
+desktop/                # Tauri desktop app (Windows + Linux)
+├── src/                #   Vue 3 frontend
+└── src-tauri/src/      #   Rust backend
 
-src-tauri/src/          # Rust backend
-├── discovery/          #   Device discovery (UDP broadcast + unicast response)
-├── messaging/          #   Messaging (UDP unicast)
-├── transfer/           #   File transfer (TCP)
-├── storage/            #   SQLite database
-└── protocol/           #   Binary protocol
+apple/                  # iOS app (native Swift)
+├── Peacock/            #   SwiftUI views + networking
+
+android/                # Android app (native Kotlin)
+├── app/src/main/java/  #   Compose UI + protocol + networking
+```
+
+## Building from Source
+
+### Desktop (Windows / Linux)
+
+```bash
+cd desktop
+npm install
+npx tauri dev          # development
+npx tauri build        # release
+```
+
+### Android
+
+```bash
+cd android
+./gradlew assembleRelease
+```
+
+### iOS
+
+```bash
+cd apple
+# Open in Xcode, build and run
 ```
 
 ## Support the Project
-
-If you find Peacock useful, consider buying me a coffee!
 
 <p align="center">
   <a href="https://buymeacoffee.com/jlynnc">
