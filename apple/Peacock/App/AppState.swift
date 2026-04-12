@@ -3,7 +3,7 @@ import SwiftUI
 import Combine
 import os.log
 
-private let log = Logger(subsystem: "com.jlynnc.peacock", category: "AppState")
+private let log = Logger(subsystem: "com.peacock.app", category: "AppState")
 
 /// Central app state that coordinates networking, storage, and UI.
 @MainActor

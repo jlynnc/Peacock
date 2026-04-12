@@ -2,7 +2,7 @@ import Foundation
 import Network
 import os.log
 
-private let udpLog = Logger(subsystem: "com.jlynnc.peacock", category: "UDP")
+private let udpLog = Logger(subsystem: "com.peacock.app", category: "UDP")
 
 /// Manages UDP communication: sending and receiving discovery + messaging packets.
 /// Uses BSD sockets for listening (reliable broadcast/multicast reception)
