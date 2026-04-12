@@ -16,48 +16,77 @@ struct DeviceListView: View {
     }
 
     var body: some View {
-        List {
-            if filteredDevices.isEmpty {
-                VStack(spacing: 12) {
-                    Image(systemName: "wifi.slash")
-                        .font(.system(size: 40))
-                        .foregroundStyle(.tertiary)
-                    Text(t("devices.empty"))
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-                    Text(t("devices.empty.hint"))
-                        .font(.subheadline)
-                        .foregroundStyle(.tertiary)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 60)
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-            } else {
-                ForEach(filteredDevices) { device in
-                    NavigationLink(value: device.deviceId) {
-                        DeviceRowView(device: device)
-                    }
-                }
-            }
-        }
-        .listStyle(.plain)
-        .searchable(text: $searchText, prompt: t("devices.search"))
-        .navigationTitle(t("tab.devices"))
-        .navigationDestination(for: String.self) { deviceId in
-            ChatView(deviceId: deviceId)
-        }
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
+        VStack(spacing: 0) {
+            // Custom header: 设备 + ● count
+            HStack {
+                Text(t("tab.devices"))
+                    .font(.system(size: 28, weight: .bold))
+                Spacer()
                 HStack(spacing: 4) {
                     Circle()
                         .fill(Color.onlineGreen)
                         .frame(width: 8, height: 8)
                     Text("\(appState.discovery.onlineCount)")
-                        .font(.subheadline)
+                        .font(.system(size: 15))
                         .foregroundStyle(.secondary)
                 }
             }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 12)
+
+            // Search bar
+            HStack {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+                TextField(t("devices.search"), text: $searchText)
+                    .font(.system(size: 16))
+                if !searchText.isEmpty {
+                    Button {
+                        searchText = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: 10))
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8)
+
+            // Device list
+            List {
+                if filteredDevices.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "wifi.slash")
+                            .font(.system(size: 40))
+                            .foregroundStyle(.tertiary)
+                        Text(t("devices.empty"))
+                            .font(.headline)
+                            .foregroundStyle(.secondary)
+                        Text(t("devices.empty.hint"))
+                            .font(.subheadline)
+                            .foregroundStyle(.tertiary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 60)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                } else {
+                    ForEach(filteredDevices) { device in
+                        NavigationLink(value: device.deviceId) {
+                            DeviceRowView(device: device)
+                        }
+                    }
+                }
+            }
+            .listStyle(.plain)
+        }
+        .navigationBarHidden(true)
+        .navigationDestination(for: String.self) { deviceId in
+            ChatView(deviceId: deviceId)
         }
     }
 }

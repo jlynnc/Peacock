@@ -6,9 +6,9 @@ struct SnippetListView: View {
     @State private var renamingId: String?
     @State private var renameText = ""
     @State private var shareSnippetId: String?
+    @FocusState private var renameFieldFocused: Bool
 
     private var t: (String) -> String { appState.locale.t }
-    @State private var navigationPath = NavigationPath()
 
     var filteredSnippets: [Snippet] {
         if searchText.isEmpty { return appState.snippets }
@@ -19,6 +19,47 @@ struct SnippetListView: View {
     }
 
     var body: some View {
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Text(t("tab.snippets"))
+                    .font(.system(size: 28, weight: .bold))
+                Spacer()
+                Button {
+                    appState.createSnippet()
+                    if let newId = appState.selectedSnippetId {
+                        renamingId = newId
+                        renameText = "新建片段"
+                    }
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 20))
+                        .foregroundStyle(Color.peacockTeal)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 12)
+
+            // Search
+            HStack {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+                TextField(t("snippets.search"), text: $searchText)
+                    .font(.system(size: 16))
+                if !searchText.isEmpty {
+                    Button { searchText = "" } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: 10))
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8)
+
         List {
             if filteredSnippets.isEmpty {
                 VStack(spacing: 12) {
@@ -41,13 +82,26 @@ struct SnippetListView: View {
                     if renamingId == snippet.id {
                         // Inline rename
                         TextField("片段名称", text: $renameText, onCommit: {
-                            appState.renameSnippet(snippet.id, title: renameText)
-                            renamingId = nil
+                            let id = snippet.id
+                            let name = renameText
+                            // Defer to avoid mutating state during view update
+                            DispatchQueue.main.async {
+                                appState.renameSnippet(id, title: name)
+                                renamingId = nil
+                            }
                         })
                         .font(.system(size: 15, weight: .semibold))
                         .textFieldStyle(.roundedBorder)
+                        .focused($renameFieldFocused)
                         .onAppear {
                             renameText = snippet.title
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                renameFieldFocused = true
+                                // Select all text in the focused UITextField
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    UIApplication.shared.sendAction(#selector(UIResponder.selectAll(_:)), to: nil, from: nil, for: nil)
+                                }
+                            }
                         }
                     } else {
                         NavigationLink(value: snippet.id) {
@@ -87,24 +141,10 @@ struct SnippetListView: View {
             }
         }
         .listStyle(.plain)
-        .searchable(text: $searchText, prompt: t("snippets.search"))
-        .navigationTitle(t("tab.snippets"))
+        }
+        .navigationBarHidden(true)
         .navigationDestination(for: String.self) { snippetId in
             SnippetEditorView(snippetId: snippetId)
-        }
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    appState.createSnippet()
-                    // Auto-enter rename mode for the new snippet
-                    if let newId = appState.selectedSnippetId {
-                        renamingId = newId
-                        renameText = "新建片段"
-                    }
-                } label: {
-                    Image(systemName: "plus")
-                }
-            }
         }
         .sheet(item: $shareSnippetId) { snippetId in
             DevicePickerSheet(snippetId: snippetId)
