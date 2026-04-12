@@ -131,7 +131,6 @@ final class AppState: ObservableObject {
     func start() {
         guard !isStarted else { return }
         isStarted = true
-        log.error("[Peacock] start() called - launching UDP listener + beacon")
         udpService.startListening()
         startBeacon()
         startTimeoutChecker()
@@ -143,7 +142,6 @@ final class AppState: ObservableObject {
             object: nil, queue: .main
         ) { [weak self] _ in
             guard let self else { return }
-            log.error("[Peacock] willEnterForeground - restarting UDP listener")
             self.udpService.stopListening()
             self.udpService.startListening()
             // Send an immediate announce so others discover us quickly
@@ -188,10 +186,7 @@ final class AppState: ObservableObject {
         timeoutTimer = Timer.scheduledTimer(withTimeInterval: NetworkConstants.timeoutCheckInterval, repeats: true) { [weak self] _ in
             guard let self else { return }
             Task { @MainActor in
-                let offlineIds = self.discovery.checkTimeouts()
-                for id in offlineIds {
-                    print("[Discovery] Device offline: \(id)")
-                }
+                _ = self.discovery.checkTimeouts()
             }
         }
     }
@@ -228,7 +223,6 @@ final class AppState: ObservableObject {
             log.error("[Peacock] Failed to decode Announce from \(sourceIP)")
             return
         }
-        log.error("[Peacock] Announce from \(announce.deviceName) at \(sourceIP) platform=\(announce.platform)")
 
         // Record that we received their broadcast (for restricted status)
         discovery.noteReceivedBroadcast(from: senderDeviceId)
@@ -253,7 +247,6 @@ final class AppState: ObservableObject {
             ownDeviceId: deviceId
         )
         if added {
-            log.error("[Peacock] Rule 2: Added \(announce.deviceName) (found self in restricted_peers)")
             try? db.saveKnownDevice(broadcaster)
         }
 
@@ -284,8 +277,6 @@ final class AppState: ObservableObject {
         // Rule 1: Someone responded to our broadcast → add them
         let isNew = discovery.addDeviceFromResponse(device)
         if isNew {
-            let restricted = discovery.isBroadcastRestricted(senderDeviceId)
-            log.error("[Peacock] Rule 1: Added \(announce.deviceName) restricted=\(restricted)")
             try? db.saveKnownDevice(device)
         }
     }
@@ -352,7 +343,6 @@ final class AppState: ObservableObject {
             log.error("[Peacock] handleFileAccept: device not found")
             return
         }
-        log.error("[Peacock] handleFileAccept: transfer=\(accept.transferId) port=\(accept.receiverPort) offset=\(accept.resumeOffset)")
 
         transferManager.startSending(
             transferId: accept.transferId,
@@ -430,8 +420,6 @@ final class AppState: ObservableObject {
         let fileSize = (attrs[.size] as? UInt64) ?? 0
         let fileName = url.lastPathComponent
 
-        log.error("[Peacock] sendFile: \(fileName) size=\(fileSize) to \(device.ipAddr)")
-
         let task = transferManager.createSendTask(
             deviceId: deviceId,
             fileName: fileName,
@@ -468,19 +456,15 @@ final class AppState: ObservableObject {
             return
         }
 
-        log.error("[Peacock] acceptTransfer: \(task.fileName) from \(device.deviceName)")
-
         Task {
             do {
                 let port = try await transferManager.startReceiving(transferId: transferId)
-                log.error("[Peacock] startReceiving OK, port=\(port), sending FileAccept to \(device.ipAddr)")
                 let accept = FileAcceptPayload(
                     transferId: transferId,
                     receiverPort: port,
                     resumeOffset: task.resumeOffset
                 )
                 udpService.sendFileAccept(accept, to: device.ipAddr)
-                log.error("[Peacock] FileAccept sent for \(transferId)")
             } catch {
                 log.error("[Peacock] Accept failed: \(error.localizedDescription)")
                 task.status = .failed
