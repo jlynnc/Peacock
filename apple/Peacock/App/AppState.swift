@@ -230,7 +230,13 @@ final class AppState: ObservableObject {
         }
         log.error("[Peacock] Announce from \(announce.deviceName) at \(sourceIP) platform=\(announce.platform)")
 
-        let device = DeviceInfo(
+        // Record that we received their broadcast (for restricted status)
+        discovery.noteReceivedBroadcast(from: senderDeviceId)
+
+        // If device is already in our list, update lastSeen
+        discovery.touchDevice(senderDeviceId)
+
+        let broadcaster = DeviceInfo(
             deviceId: senderDeviceId,
             deviceName: announce.deviceName,
             ipAddr: sourceIP,
@@ -240,15 +246,18 @@ final class AppState: ObservableObject {
             isOnline: true
         )
 
-        let isNew = discovery.upsertDevice(device)
-        discovery.markCanBroadcast(senderDeviceId)
-        discovery.mergeRestrictedPeers(announce.restrictedPeers, ownDeviceId: deviceId)
-
-        if isNew {
-            try? db.saveKnownDevice(device)
+        // Rule 2: Check if MY device ID is in their restricted_peers → add them
+        let added = discovery.checkSelfInRestrictedPeers(
+            broadcaster: broadcaster,
+            restrictedPeers: announce.restrictedPeers,
+            ownDeviceId: deviceId
+        )
+        if added {
+            log.error("[Peacock] Rule 2: Added \(announce.deviceName) (found self in restricted_peers)")
+            try? db.saveKnownDevice(broadcaster)
         }
 
-        // Send response
+        // Always send AnnounceResponse so they can discover us via Rule 1
         let response = AnnouncePayload(
             deviceName: deviceName,
             platform: NetworkUtils.currentPlatform,
@@ -272,10 +281,11 @@ final class AppState: ObservableObject {
             isOnline: true
         )
 
-        let isNew = discovery.upsertDevice(device)
-        discovery.markResponded(senderDeviceId)
-
+        // Rule 1: Someone responded to our broadcast → add them
+        let isNew = discovery.addDeviceFromResponse(device)
         if isNew {
+            let restricted = discovery.isBroadcastRestricted(senderDeviceId)
+            log.error("[Peacock] Rule 1: Added \(announce.deviceName) restricted=\(restricted)")
             try? db.saveKnownDevice(device)
         }
     }
