@@ -122,7 +122,7 @@ cd apple
 ## 支持项目
 
 <p align="center">
-  <a href="https://buymeacoffee.com/jlynnc">
+  <a href="https://buy.stripe.com/9B67sLfiy1dC1BOcTOaR201">
     <img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" />
   </a>
 </p>
