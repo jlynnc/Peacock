@@ -133,7 +133,7 @@ class AppState(private val context: Context) : ViewModel() {
         )
         getOrCreateMessages(deviceId).add(msg)
 
-        val payload = TextPayload(msgId, text, timestamp.toULong())
+        val payload = TextPayload(msgId, text, timestamp.toULong(), deviceId)
         try {
             val targetIp = InetAddress.getByName(device.ipAddr)
             udpService.sendToDevice(targetIp, PacketType.Text, payload.encode())

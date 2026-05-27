@@ -52,6 +52,12 @@ pub enum PacketType {
     SnippetShare = 31,
     /// TCP: Acknowledgment
     Ack = 99,
+    /// Room: Create a group chat room
+    RoomCreate = 40,
+    /// Room: Message in a room
+    RoomMessage = 41,
+    /// Room: File offer in a room
+    RoomFileOffer = 42,
 }
 
 impl PacketType {
@@ -67,6 +73,9 @@ impl PacketType {
             23 => Some(Self::FileChunk),
             30 => Some(Self::Clipboard),
             31 => Some(Self::SnippetShare),
+            40 => Some(Self::RoomCreate),
+            41 => Some(Self::RoomMessage),
+            42 => Some(Self::RoomFileOffer),
             99 => Some(Self::Ack),
             _ => None,
         }
@@ -99,6 +108,9 @@ pub struct TextPayload {
     pub message_id: String,
     pub text: String,
     pub timestamp: u64,
+    /// Target device ID. Empty string = send to the device at the destination IP.
+    #[serde(default)]
+    pub target_device_id: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -134,4 +146,35 @@ pub struct SnippetSharePayload {
     pub content: String,
     pub tag: String,
     pub note: String,
+}
+
+// ── Room (group chat) payloads ──
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RoomCreatePayload {
+    pub room_id: String,
+    pub room_name: String,
+    pub member_ids: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RoomMessagePayload {
+    pub room_id: String,
+    pub message_id: String,
+    pub sender_id: String,
+    pub sender_name: String,
+    pub text: String,
+    pub timestamp: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RoomFileOfferPayload {
+    pub room_id: String,
+    pub transfer_id: String,
+    pub sender_id: String,
+    pub sender_name: String,
+    pub file_name: String,
+    pub file_size: u64,
+    pub is_folder: bool,
+    pub file_count: u32,
 }

@@ -118,7 +118,9 @@ async fn run_listener_loop(
                     }
                     Some(PacketType::Text | PacketType::FileOffer |
                                PacketType::FileAccept | PacketType::FileReject |
-                               PacketType::SnippetShare) => {
+                               PacketType::SnippetShare |
+                               PacketType::RoomCreate | PacketType::RoomMessage |
+                               PacketType::RoomFileOffer) => {
                         let peer_addr = SocketAddr::new(source_ip, addr.port());
                         crate::messaging::handler::handle_udp_packet(
                             state, app_handle, header, payload_bytes.to_vec(), peer_addr,
@@ -168,7 +170,10 @@ async fn handle_announce(
 
     // Rule 2: check if WE are in their restricted_peers → self-discovery
     let self_id_str = st.device_id.clone();
-    if payload.restricted_peers.iter().any(|p| p.device_id == self_id_str) {
+    let self_in_list = payload.restricted_peers.iter().any(|p| p.device_id == self_id_str);
+
+    if self_in_list {
+        // Add the broadcaster
         let is_new = st.discovery.upsert_from_restricted_self_discovery(
             device_id_str.to_string(),
             payload.device_name.clone(),
@@ -180,6 +185,33 @@ async fn handle_announce(
             info!("Device discovered (self in restricted_peers): {} at {}", payload.device_name, source_ip);
             if let Some(device) = st.discovery.get_device_with_status(device_id_str) {
                 let _ = app_handle.emit("device-online", &device);
+            }
+        }
+
+        // Also add other devices from restricted_peers (peer discovery)
+        for peer in &payload.restricted_peers {
+            if peer.device_id == self_id_str { continue; } // skip self
+            let ip: std::net::IpAddr = match peer.ip_addr.parse() {
+                Ok(ip) => ip,
+                Err(_) => continue,
+            };
+            let existed = st.discovery.get_device(&peer.device_id).is_some();
+            if existed {
+                // Refresh last_seen for existing device (kept alive by broadcaster)
+                st.discovery.touch_device(&peer.device_id);
+            } else {
+                // New device from restricted_peers
+                st.discovery.upsert_from_restricted_self_discovery(
+                    peer.device_id.clone(),
+                    peer.device_name.clone(),
+                    ip,
+                    peer.tcp_port,
+                    peer.platform.clone(),
+                );
+                info!("Device discovered (peer in restricted_peers): {} at {}", peer.device_name, peer.ip_addr);
+                if let Some(device) = st.discovery.get_device_with_status(&peer.device_id) {
+                    let _ = app_handle.emit("device-online", &device);
+                }
             }
         }
     }

@@ -67,18 +67,24 @@ data class AnnouncePayload(
 data class TextPayload(
     val messageId: String,
     val text: String,
-    val timestamp: ULong
+    val timestamp: ULong,
+    val targetDeviceId: String = ""
 ) {
     fun encode(): ByteArray = BincodeEncoder()
         .encodeString(messageId)
         .encodeString(text)
         .encodeU64(timestamp)
+        .encodeString(targetDeviceId)
         .toByteArray()
 
     companion object {
         fun decode(data: ByteArray): TextPayload {
             val d = BincodeDecoder(data)
-            return TextPayload(d.decodeString(), d.decodeString(), d.decodeU64())
+            val msgId = d.decodeString()
+            val text = d.decodeString()
+            val ts = d.decodeU64()
+            val target = try { d.decodeString() } catch (_: Exception) { "" }
+            return TextPayload(msgId, text, ts, target)
         }
     }
 }

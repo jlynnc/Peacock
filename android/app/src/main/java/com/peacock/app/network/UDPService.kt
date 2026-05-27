@@ -145,12 +145,27 @@ class UDPService(
             }
 
             // Rule 2: check if WE are in their restricted_peers
-            if (payload.restrictedPeers.any { it.deviceId == deviceIdStr }) {
+            val selfInList = payload.restrictedPeers.any { it.deviceId == deviceIdStr }
+            if (selfInList) {
                 val isNew = upsertFromResponse(senderId, payload.deviceName,
                     senderIp.hostAddress ?: "", payload.tcpPort, payload.platform)
                 if (isNew) {
                     Log.i(TAG, "Device discovered (self in restricted_peers): ${payload.deviceName}")
                     devices[senderId]?.let { onDeviceDiscovered(it) }
+                }
+
+                // Also add other devices from restricted_peers (peer discovery)
+                for (peer in payload.restrictedPeers) {
+                    if (peer.deviceId == deviceIdStr) continue
+                    val existed = devices.containsKey(peer.deviceId)
+                    if (existed) {
+                        devices[peer.deviceId]?.lastSeen = System.currentTimeMillis() / 1000
+                    } else {
+                        upsertFromResponse(peer.deviceId, peer.deviceName,
+                            peer.ipAddr, peer.tcpPort, peer.platform)
+                        Log.i(TAG, "Device discovered (peer in restricted_peers): ${peer.deviceName}")
+                        devices[peer.deviceId]?.let { onDeviceDiscovered(it) }
+                    }
                 }
             }
 

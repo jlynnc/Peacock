@@ -142,3 +142,33 @@ export async function shareSnippet(
 ): Promise<void> {
   return invoke("share_snippet", { deviceId, title, content, tag, note });
 }
+
+// Room commands
+export async function createRoom(
+  roomName: string,
+  memberIds: string[],
+): Promise<string> {
+  return invoke("create_room", { roomName, memberIds });
+}
+
+export async function getRooms(): Promise<any[]> {
+  return invoke("get_rooms");
+}
+
+export async function deleteRoom(roomId: string): Promise<void> {
+  return invoke("delete_room", { roomId });
+}
+
+export async function sendRoomMessage(
+  roomId: string,
+  text: string,
+): Promise<string> {
+  return invoke("send_room_message", { roomId, text });
+}
+
+export async function sendRoomFile(
+  roomId: string,
+  filePath: string,
+): Promise<string> {
+  return invoke("send_room_file", { roomId, filePath });
+}

@@ -40,6 +40,7 @@ pub async fn send_message(
         message_id: message_id.clone(),
         text: text.clone(),
         timestamp: now,
+        target_device_id: device_id.clone(),
     };
 
     send_to_device(target_addr, PacketType::Text, &self_device_id_bytes, &payload).await?;

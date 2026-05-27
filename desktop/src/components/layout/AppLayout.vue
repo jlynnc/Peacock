@@ -5,15 +5,19 @@ import AppSidebar from "./AppSidebar.vue";
 import ChatWindow from "@/components/chat/ChatWindow.vue";
 import SettingsModal from "@/components/settings/SettingsModal.vue";
 import SnippetPanel from "@/components/snippet/SnippetPanel.vue";
+import RoomChatWindow from "@/components/room/RoomChatWindow.vue";
+import DebugPanel from "@/components/debug/DebugPanel.vue";
 import DevicePickerDialog from "@/components/common/DevicePickerDialog.vue";
 import { useDeviceStore } from "@/stores/device";
 import { useChatStore } from "@/stores/chat";
+import { useRoomStore } from "@/stores/room";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { isTauri } from "@/utils/platform";
 
 const deviceStore = useDeviceStore();
 const chatStore = useChatStore();
+const roomStore = useRoomStore();
 const showSettings = ref(false);
 const activeView = ref("devices");
 
@@ -88,8 +92,23 @@ async function closeWindow() {
         @open-settings="showSettings = true"
       />
       <main class="app-main">
+        <DebugPanel
+          v-if="activeView === 'debug'"
+          @minimize="minimizeWindow"
+          @maximize="maximizeWindow"
+          @close="closeWindow"
+        />
+
         <SnippetPanel
-          v-if="activeView === 'snippets'"
+          v-else-if="activeView === 'snippets'"
+          @minimize="minimizeWindow"
+          @maximize="maximizeWindow"
+          @close="closeWindow"
+        />
+
+        <RoomChatWindow
+          v-else-if="activeView === 'rooms' && roomStore.selectedRoom"
+          :room="roomStore.selectedRoom"
           @minimize="minimizeWindow"
           @maximize="maximizeWindow"
           @close="closeWindow"

@@ -37,6 +37,13 @@ async fn run_beacon_loop(state: &Arc<RwLock<AppState>>) -> crate::error::Result<
 
         let mut st = state.write().await;
         st.discovery.refresh_restricted_status();
+
+        // Debug: skip broadcasting if disabled (simulates restricted device)
+        if !st.broadcast_enabled {
+            drop(st);
+            continue;
+        }
+
         let restricted_peers = st.discovery.get_restricted_peers();
         let payload = AnnouncePayload {
             device_name: st.device_name.clone(),
@@ -62,6 +69,7 @@ async fn run_beacon_loop(state: &Arc<RwLock<AppState>>) -> crate::error::Result<
         let mut packet = Vec::with_capacity(PacketHeader::SIZE + payload_bytes.len());
         packet.extend_from_slice(&header.to_bytes());
         packet.extend_from_slice(&payload_bytes);
+
         drop(st);
 
         let mut send_ok = false;
@@ -91,7 +99,6 @@ async fn run_beacon_loop(state: &Arc<RwLock<AppState>>) -> crate::error::Result<
             consecutive_errors = 0;
         } else {
             consecutive_errors += 1;
-            // If all sends fail repeatedly, socket is dead — rebuild
             if consecutive_errors >= 3 {
                 warn!("Beacon: all sends failed {} times, rebuilding socket", consecutive_errors);
                 return Err(crate::error::PeacockError::Network("Socket dead".into()));

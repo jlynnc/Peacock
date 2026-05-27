@@ -174,6 +174,32 @@ impl DiscoveryState {
     pub fn get_device_with_status(&self, device_id: &str) -> Option<DeviceInfo> {
         self.devices.get(device_id).cloned()
     }
+
+    /// Refresh last_seen for an existing device (keepalive from restricted_peers)
+    pub fn touch_device(&mut self, device_id: &str) {
+        if let Some(device) = self.devices.get_mut(device_id) {
+            device.last_seen = now_secs();
+        }
+    }
+
+    /// Get all online devices with full debug info (including last_broadcast_at)
+    pub fn get_debug_devices(&self) -> Vec<serde_json::Value> {
+        self.devices
+            .values()
+            .filter(|d| d.is_online)
+            .map(|d| {
+                serde_json::json!({
+                    "device_id": d.device_id,
+                    "device_name": d.device_name,
+                    "ip_addr": d.ip_addr,
+                    "platform": d.platform,
+                    "last_seen": d.last_seen,
+                    "last_broadcast_at": d.last_broadcast_at,
+                    "is_restricted": d.is_restricted,
+                })
+            })
+            .collect()
+    }
 }
 
 fn now_secs() -> u64 {
