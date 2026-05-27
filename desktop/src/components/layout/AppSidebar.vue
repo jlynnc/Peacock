@@ -6,10 +6,12 @@ import DeviceList from "@/components/device/DeviceList.vue";
 import SnippetList from "@/components/snippet/SnippetList.vue";
 import RoomList from "@/components/room/RoomList.vue";
 import { useDeviceStore } from "@/stores/device";
+import { useSettingsStore } from "@/stores/settings";
 
 const { t } = useI18n();
 
 const deviceStore = useDeviceStore();
+const settingsStore = useSettingsStore();
 
 // sidebarTab is in the store so it can be changed from anywhere (e.g. "save to snippet")
 const searchQuery = ref("");
@@ -59,6 +61,7 @@ function getSelfInitial(): string {
         群聊
       </button>
       <button
+        v-if="settingsStore.debugMode"
         :class="['tab-btn', { active: deviceStore.sidebarTab === 'debug' }]"
         @click="deviceStore.sidebarTab = 'debug'"
       >

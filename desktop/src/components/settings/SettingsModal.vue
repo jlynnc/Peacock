@@ -185,6 +185,19 @@ function handleOverlayClick(e: MouseEvent) {
             </select>
           </div>
         </div>
+        <div class="setting-group">
+          <label class="setting-label">调试模式</label>
+          <div class="setting-row">
+            <label class="toggle-label">
+              <input
+                type="checkbox"
+                :checked="settingsStore.debugMode"
+                @change="settingsStore.debugMode = ($event.target as HTMLInputElement).checked"
+              />
+              <span class="toggle-text">显示调试面板</span>
+            </label>
+          </div>
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn-cancel" @click="emit('close')">{{ $t('settings.cancel') }}</button>

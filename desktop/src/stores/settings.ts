@@ -14,6 +14,7 @@ export const useSettingsStore = defineStore("settings", () => {
   const autoStart = ref(false);
   const contextMenu = ref(false);
   const maxConcurrent = ref(10);
+  const debugMode = ref(false);
 
   async function loadSettings() {
     if (!isTauri()) return;
@@ -126,6 +127,7 @@ export const useSettingsStore = defineStore("settings", () => {
     autoStart,
     contextMenu,
     maxConcurrent,
+    debugMode,
     loadSettings,
     setDeviceName,
     setDownloadDir,
