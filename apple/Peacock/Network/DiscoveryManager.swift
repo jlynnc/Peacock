@@ -58,6 +58,28 @@ final class DiscoveryManager: ObservableObject {
         return false
     }
 
+    /// Learn about a third-party device from a broadcaster's restricted_peers list.
+    /// Lets two restricted devices discover each other via a shared broadcaster.
+    /// Returns true if it's a newly-added device (caller should persist it).
+    @discardableResult
+    func addPeerFromRestrictedList(_ peer: PeerInfo) -> Bool {
+        if devices[peer.deviceId] != nil {
+            devices[peer.deviceId]?.lastSeen = Date()
+            devices[peer.deviceId]?.isOnline = true
+            return false
+        }
+        devices[peer.deviceId] = DeviceInfo(
+            deviceId: peer.deviceId,
+            deviceName: peer.deviceName,
+            ipAddr: peer.ipAddr,
+            tcpPort: peer.tcpPort,
+            platform: peer.platform,
+            lastSeen: Date(),
+            isOnline: true
+        )
+        return true
+    }
+
     // MARK: - Broadcast tracking
 
     /// Record that we received a broadcast from this device.
