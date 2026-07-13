@@ -71,22 +71,33 @@ struct TextPayload: Sendable {
     let messageId: String
     let text: String
     let timestamp: UInt64
+    /// Target device ID. Empty string = addressed to whoever owns the destination IP.
+    let targetDeviceId: String
+
+    init(messageId: String, text: String, timestamp: UInt64, targetDeviceId: String = "") {
+        self.messageId = messageId
+        self.text = text
+        self.timestamp = timestamp
+        self.targetDeviceId = targetDeviceId
+    }
 
     func encode() -> Data {
         let enc = BincodeEncoder()
         enc.encodeString(messageId)
         enc.encodeString(text)
         enc.encodeU64(timestamp)
+        enc.encodeString(targetDeviceId)
         return enc.data
     }
 
     static func decode(from data: Data) throws -> TextPayload {
         let dec = BincodeDecoder(data: data)
-        return TextPayload(
-            messageId: try dec.decodeString(),
-            text: try dec.decodeString(),
-            timestamp: try dec.decodeU64()
-        )
+        let messageId = try dec.decodeString()
+        let text = try dec.decodeString()
+        let timestamp = try dec.decodeU64()
+        // Backward-compatible: older senders omit targetDeviceId.
+        let target = (try? dec.decodeString()) ?? ""
+        return TextPayload(messageId: messageId, text: text, timestamp: timestamp, targetDeviceId: target)
     }
 }
 

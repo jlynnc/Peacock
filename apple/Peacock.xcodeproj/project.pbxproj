@@ -96,7 +96,7 @@
 		CC6E92B7B1A889CE53155BBF /* Peacock.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Peacock.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E36AA793F17CD2A359625588 /* DiscoveryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryManager.swift; sourceTree = "<group>"; };
 		E386C08E27597D2BB22F77EF /* TransferTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransferTask.swift; sourceTree = "<group>"; };
-		EA8503BD2DABBAA099A02344 /* Peacock.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Peacock.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		EA8503BD2DABBAA099A02344 /* Peacock.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Peacock.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EB6B65A29CA352570041532C /* BincodeDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BincodeDecoder.swift; sourceTree = "<group>"; };
 		F63300321FE50BF1056344CB /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
 		FD629BF5C2B18207B8AF07A9 /* PeacockApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeacockApp.swift; sourceTree = "<group>"; };
@@ -318,6 +318,11 @@
 				TargetAttributes = {
 					B326F27A22CD350A157682CB = {
 						DevelopmentTeam = G58K5HLBG5;
+						ProvisioningStyle = Automatic;
+					};
+					BC650CBF66137D0BDA534A4C = {
+						DevelopmentTeam = G58K5HLBG5;
+						ProvisioningStyle = Automatic;
 					};
 				};
 			};
@@ -331,7 +336,7 @@
 			mainGroup = 04D578F1103A1FDAC6419418;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				CC32258A7943E658BEB7F320 /* XCRemoteSwiftPackageReference "GRDB" */,
+				CC32258A7943E658BEB7F320 /* XCRemoteSwiftPackageReference "GRDB.swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = D9ADFB85BFC3832291317E77 /* Products */;
@@ -441,8 +446,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Peacock/Peacock.entitlements;
 				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = G58K5HLBG5;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = Peacock/Info.plist;
@@ -450,7 +456,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.peacock.app;
 				PRODUCT_NAME = Peacock;
 				SDKROOT = macosx;
@@ -463,9 +469,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Peacock/Peacock.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = G58K5HLBG5;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = Peacock/Info.plist;
@@ -473,10 +479,9 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.peacock.app;
 				PRODUCT_NAME = Peacock;
-				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -608,7 +613,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Peacock/Peacock.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CURRENT_PROJECT_VERSION = 1;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = G58K5HLBG5;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = Peacock/Info.plist;
@@ -616,7 +622,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.peacock.app;
 				PRODUCT_NAME = Peacock;
 				SDKROOT = iphoneos;
@@ -631,8 +637,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Peacock/Peacock.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = G58K5HLBG5;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = Peacock/Info.plist;
@@ -640,7 +647,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.peacock.app;
 				PRODUCT_NAME = Peacock;
 				SDKROOT = macosx;
@@ -681,7 +688,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		CC32258A7943E658BEB7F320 /* XCRemoteSwiftPackageReference "GRDB" */ = {
+		CC32258A7943E658BEB7F320 /* XCRemoteSwiftPackageReference "GRDB.swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/groue/GRDB.swift";
 			requirement = {
@@ -694,12 +701,12 @@
 /* Begin XCSwiftPackageProductDependency section */
 		A0A5D6AFD3758591D88D2645 /* GRDB */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = CC32258A7943E658BEB7F320 /* XCRemoteSwiftPackageReference "GRDB" */;
+			package = CC32258A7943E658BEB7F320 /* XCRemoteSwiftPackageReference "GRDB.swift" */;
 			productName = GRDB;
 		};
 		ACEC37A04C85128CBDA8E52F /* GRDB */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = CC32258A7943E658BEB7F320 /* XCRemoteSwiftPackageReference "GRDB" */;
+			package = CC32258A7943E658BEB7F320 /* XCRemoteSwiftPackageReference "GRDB.swift" */;
 			productName = GRDB;
 		};
 /* End XCSwiftPackageProductDependency section */

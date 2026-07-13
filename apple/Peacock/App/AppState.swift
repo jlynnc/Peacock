@@ -62,9 +62,9 @@ final class AppState: ObservableObject {
         }
         self.db = db
 
-        // Load or create device ID
+        // Load or create device ID (lowercase to match Windows/Android wire format)
         let storedId = try? db.getSetting("device_id")
-        let id = storedId ?? UUID().uuidString
+        let id = (storedId ?? UUID().uuidString).lowercased()
         if storedId == nil {
             try? db.setSetting("device_id", value: id)
         }
@@ -248,6 +248,15 @@ final class AppState: ObservableObject {
         )
         if added {
             try? db.saveKnownDevice(broadcaster)
+
+            // Learn about other restricted peers so two restricted devices
+            // can discover each other through this shared broadcaster.
+            for peer in announce.restrictedPeers where peer.deviceId != deviceId {
+                if discovery.addPeerFromRestrictedList(peer),
+                   let d = discovery.getDevice(peer.deviceId) {
+                    try? db.saveKnownDevice(d)
+                }
+            }
         }
 
         // Always send AnnounceResponse so they can discover us via Rule 1
@@ -392,7 +401,7 @@ final class AppState: ObservableObject {
 
         let messageId = UUID().uuidString
         let timestamp = UInt64(Date().timeIntervalSince1970 * 1000)
-        let payload = TextPayload(messageId: messageId, text: text, timestamp: timestamp)
+        let payload = TextPayload(messageId: messageId, text: text, timestamp: timestamp, targetDeviceId: deviceId)
 
         udpService.sendText(payload, to: device.ipAddr)
 
