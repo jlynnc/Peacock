@@ -8,6 +8,10 @@ struct SettingsView: View {
 
     private var t: (String) -> String { appState.locale.t }
 
+    private var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.1"
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // Header
@@ -148,7 +152,7 @@ struct SettingsView: View {
                 HStack {
                     Label(t("settings.version"), systemImage: "info.circle")
                     Spacer()
-                    Text("v0.1.0")
+                    Text("v\(appVersion)")
                         .foregroundStyle(.secondary)
                 }
 
