@@ -67,54 +67,88 @@ function renderContent(text: string): string {
     .replace(/\n/g, "<br>");
 }
 
-// Extract plain text with [[...]] markers back from contenteditable HTML
-function extractContent(el: HTMLDivElement): string {
-  let result = "";
-  for (const node of el.childNodes) {
-    if (node.nodeType === Node.TEXT_NODE) {
-      result += node.textContent || "";
-    } else if (node.nodeName === "BR") {
-      result += "\n";
-    } else if (node instanceof HTMLElement) {
-      if (node.classList.contains("qc-chip")) {
-        result += `[[${node.dataset.qc || node.textContent}]]`;
-      } else {
-        // Nested div (line breaks in contenteditable)
-        if (node.nodeName === "DIV") {
-          if (result.length > 0 && !result.endsWith("\n")) result += "\n";
-          result += node.textContent || "";
+// Extract plain text with [[...]] markers back from contenteditable HTML.
+//
+// The browser represents lines two different ways and mixes them freely:
+//   - a bare <br> between inline content
+//   - a block wrapper: <div>line</div>, with an empty line as <div><br></div>
+// So we collect one string per "line": block elements start a new line, and a
+// <br> ends the current line. A <br> that is the only child of a block is just
+// the browser's height placeholder for an empty line — it must not add a second
+// newline on top of the one the block itself already produced.
+function extractContent(el: HTMLElement): string {
+  const lines: string[] = [""];
+  const append = (s: string) => {
+    lines[lines.length - 1] += s;
+  };
+  const newLine = () => lines.push("");
+
+  const isBlock = (n: Node) =>
+    n.nodeName === "DIV" || n.nodeName === "P" || n.nodeName === "LI";
+
+  const walk = (parent: Node) => {
+    for (const node of parent.childNodes) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        append(node.textContent || "");
+      } else if (node.nodeName === "BR") {
+        // Placeholder <br> inside an otherwise-empty block: the block already
+        // opened this (empty) line, so don't add another break.
+        const isPlaceholder =
+          parent !== el && isBlock(parent) && parent.childNodes.length === 1;
+        if (!isPlaceholder) newLine();
+      } else if (node instanceof HTMLElement) {
+        if (node.classList.contains("qc-chip")) {
+          append(`[[${node.dataset.qc ?? node.textContent ?? ""}]]`);
+        } else if (isBlock(node)) {
+          // A block always starts its own line — unless we're still on a line
+          // that nothing has been written to yet (e.g. the very first block).
+          if (lines[lines.length - 1] !== "" || lines.length === 1) {
+            if (lines[lines.length - 1] !== "") newLine();
+          }
+          walk(node);
+          // Content after a block continues on a fresh line.
+          newLine();
         } else {
-          result += node.textContent || "";
+          // Inline element (span, b, i, ...) — recurse to preserve chips inside
+          walk(node);
         }
       }
     }
-  }
-  return result;
+  };
+
+  walk(el);
+
+  // A trailing newLine() from the final block leaves one empty element behind.
+  if (lines.length > 1 && lines[lines.length - 1] === "") lines.pop();
+
+  return lines.join("\n");
 }
 
 let isRendering = false;
 
 // Sync local fields when selection changes
+// Only re-render when a DIFFERENT snippet is selected. Watching the snippet
+// object itself would re-fire on every autosave (saveSnippet mutates it in
+// place), wiping the caret and re-rendering mid-edit.
 watch(
-  () => store.selectedSnippet,
-  (s) => {
-    if (s) {
-      title.value = s.title;
-      content.value = s.content;
-      note.value = s.note;
-      saveStatus.value = "idle";
-      // Render into contenteditable
-      if (contentEditable.value) {
-        isRendering = true;
-        contentEditable.value.innerHTML = renderContent(s.content);
-        isRendering = false;
-      }
+  () => store.selectedId,
+  () => {
+    const s = store.selectedSnippet;
+    if (!s) return;
+    title.value = s.title;
+    content.value = s.content;
+    note.value = s.note;
+    saveStatus.value = "idle";
+    if (contentEditable.value) {
+      isRendering = true;
+      contentEditable.value.innerHTML = renderContent(s.content);
+      isRendering = false;
     }
   },
   { immediate: true },
 );
 
-// Also render when contentEditable ref becomes available
+// Render once the contenteditable element is mounted
 watch(contentEditable, (el) => {
   if (el && content.value) {
     isRendering = true;

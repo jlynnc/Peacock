@@ -30,3 +30,13 @@ ui-mockup*.html
 # Claude
 .claude/
 CLAUDE.md
+
+# Signing keys — never commit
+*.jks
+*.keystore
+
+# Local debug artifacts
+crash.log
+
+# Generated Tauri schemas
+desktop/src-tauri/gen/schemas/
