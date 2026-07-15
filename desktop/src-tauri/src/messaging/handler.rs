@@ -8,6 +8,7 @@ use tracing::{debug, error, info};
 use crate::protocol::header::PacketHeader;
 use crate::protocol::types::{
     FileAcceptPayload, FileOfferPayload, FileRejectPayload, PacketType,
+    RoomCreatePayload, RoomFileOfferPayload, RoomMessagePayload,
     SnippetSharePayload, TextPayload,
 };
 use crate::protocol::wire::decode_payload;
@@ -40,6 +41,15 @@ pub async fn handle_udp_packet(
         Some(PacketType::SnippetShare) => {
             handle_snippet_share(state, app, &device_id_str, &payload).await;
         }
+        Some(PacketType::RoomCreate) => {
+            handle_room_create(state, app, &device_id_str, &payload).await;
+        }
+        Some(PacketType::RoomMessage) => {
+            handle_room_message(app, &payload).await;
+        }
+        Some(PacketType::RoomFileOffer) => {
+            handle_room_file_offer(state, app, &payload, peer_addr).await;
+        }
         _ => {
             debug!("Unknown packet type {} from {}", header.packet_type, peer_addr);
         }
@@ -47,7 +57,7 @@ pub async fn handle_udp_packet(
 }
 
 async fn handle_text(
-    state: &Arc<RwLock<AppState>>,
+    _state: &Arc<RwLock<AppState>>,
     app: &tauri::AppHandle,
     device_id_str: &str,
     payload: &[u8],
@@ -61,8 +71,6 @@ async fn handle_text(
                 peer_addr,
                 text_payload.text.chars().take(50).collect::<String>()
             );
-
-            // Chat history not persisted — messages are memory-only
 
             let now = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
@@ -258,6 +266,100 @@ async fn handle_snippet_share(
         }
         Err(e) => {
             error!("Failed to decode snippet share: {}", e);
+        }
+    }
+}
+
+// ── Room handlers ──
+
+async fn handle_room_create(
+    state: &Arc<RwLock<AppState>>,
+    app: &tauri::AppHandle,
+    _device_id_str: &str,
+    payload: &[u8],
+) {
+    match decode_payload::<RoomCreatePayload>(payload) {
+        Ok(room) => {
+            info!("Room created: {} ({})", room.room_name, room.room_id);
+
+            // Save to database
+            {
+                let st = state.read().await;
+                let _ = st.db.create_room(&room.room_id, &room.room_name, &room.member_ids);
+            }
+
+            let _ = app.emit("room-created", serde_json::json!({
+                "room_id": room.room_id,
+                "room_name": room.room_name,
+                "member_ids": room.member_ids,
+            }));
+        }
+        Err(e) => {
+            error!("Failed to decode room create: {}", e);
+        }
+    }
+}
+
+async fn handle_room_message(
+    app: &tauri::AppHandle,
+    payload: &[u8],
+) {
+    match decode_payload::<RoomMessagePayload>(payload) {
+        Ok(msg) => {
+            let _ = app.emit("room-message", serde_json::json!({
+                "room_id": msg.room_id,
+                "message_id": msg.message_id,
+                "sender_id": msg.sender_id,
+                "sender_name": msg.sender_name,
+                "text": msg.text,
+                "timestamp": msg.timestamp,
+            }));
+        }
+        Err(e) => {
+            error!("Failed to decode room message: {}", e);
+        }
+    }
+}
+
+async fn handle_room_file_offer(
+    state: &Arc<RwLock<AppState>>,
+    app: &tauri::AppHandle,
+    payload: &[u8],
+    peer_addr: SocketAddr,
+) {
+    match decode_payload::<RoomFileOfferPayload>(payload) {
+        Ok(offer) => {
+            info!(
+                "Room file offer: {} in room {} from {}",
+                offer.file_name, offer.room_id, offer.sender_name
+            );
+
+            // Create receive task (reuse existing transfer tracker)
+            {
+                let mut st = state.write().await;
+                st.transfers.create_receive_task(
+                    offer.transfer_id.clone(),
+                    offer.sender_id.clone(),
+                    offer.file_name.clone(),
+                    offer.file_size,
+                    offer.is_folder,
+                    offer.file_count,
+                );
+            }
+
+            let _ = app.emit("room-file-offer", serde_json::json!({
+                "room_id": offer.room_id,
+                "transfer_id": offer.transfer_id,
+                "sender_id": offer.sender_id,
+                "sender_name": offer.sender_name,
+                "file_name": offer.file_name,
+                "file_size": offer.file_size,
+                "is_folder": offer.is_folder,
+                "file_count": offer.file_count,
+            }));
+        }
+        Err(e) => {
+            error!("Failed to decode room file offer: {}", e);
         }
     }
 }

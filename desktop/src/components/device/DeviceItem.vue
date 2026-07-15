@@ -12,7 +12,7 @@ defineProps<{
 
 <template>
   <div :class="['device-item', { active: selected }]">
-    <DeviceAvatar :device-id="device.device_id" :platform="device.platform" />
+    <DeviceAvatar :device-id="device.device_id" :platform="device.platform" :restricted="device.is_restricted" />
     <div class="device-info">
       <div class="device-name">{{ device.device_name }}</div>
       <div class="device-meta">

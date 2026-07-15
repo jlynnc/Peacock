@@ -4,11 +4,14 @@ import { useI18n } from "vue-i18n";
 import { Settings } from "lucide-vue-next";
 import DeviceList from "@/components/device/DeviceList.vue";
 import SnippetList from "@/components/snippet/SnippetList.vue";
+import RoomList from "@/components/room/RoomList.vue";
 import { useDeviceStore } from "@/stores/device";
+import { useSettingsStore } from "@/stores/settings";
 
 const { t } = useI18n();
 
 const deviceStore = useDeviceStore();
+const settingsStore = useSettingsStore();
 
 // sidebarTab is in the store so it can be changed from anywhere (e.g. "save to snippet")
 const searchQuery = ref("");
@@ -51,6 +54,19 @@ function getSelfInitial(): string {
       >
         {{ $t('tabs.snippets') }}
       </button>
+      <button
+        :class="['tab-btn', { active: deviceStore.sidebarTab === 'rooms' }]"
+        @click="deviceStore.sidebarTab = 'rooms'"
+      >
+        群聊
+      </button>
+      <button
+        v-if="settingsStore.debugMode"
+        :class="['tab-btn', { active: deviceStore.sidebarTab === 'debug' }]"
+        @click="deviceStore.sidebarTab = 'debug'"
+      >
+        🔧
+      </button>
     </div>
 
     <!-- Search (only for devices tab; snippets has its own) -->
@@ -67,6 +83,7 @@ function getSelfInitial(): string {
     <div class="sidebar-content">
       <DeviceList v-if="deviceStore.sidebarTab === 'devices'" />
       <SnippetList v-else-if="deviceStore.sidebarTab === 'snippets'" />
+      <RoomList v-else-if="deviceStore.sidebarTab === 'rooms'" />
     </div>
 
     <!-- Footer -->

@@ -22,6 +22,8 @@ pub struct AppState {
     pub data_dir: PathBuf,
     pub download_dir: PathBuf,
     pub transfer_semaphore: Arc<Semaphore>,
+    /// Debug: disable broadcasting to simulate restricted device
+    pub broadcast_enabled: bool,
 }
 
 impl AppState {
@@ -80,6 +82,7 @@ impl AppState {
             data_dir,
             download_dir,
             transfer_semaphore: Arc::new(Semaphore::new(MAX_CONCURRENT_TRANSFERS)),
+            broadcast_enabled: true,
         })
     }
 }

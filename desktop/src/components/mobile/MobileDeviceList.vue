@@ -78,8 +78,9 @@ function openChat(deviceId: string) {
           <DeviceAvatar
             :device-id="device.device_id"
             :platform="device.platform"
+            :restricted="device.is_restricted"
           />
-          <span class="online-dot"></span>
+          <span :class="['online-dot', { restricted: device.is_restricted }]"></span>
         </div>
         <div class="device-info">
           <div class="device-top-row">
@@ -213,6 +214,10 @@ function openChat(deviceId: string) {
   background: #34c759;
   border: 2.5px solid var(--color-ios-card);
   border-radius: 50%;
+}
+
+.online-dot.restricted {
+  background: #f97316;
 }
 
 .device-info {

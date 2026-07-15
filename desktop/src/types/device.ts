@@ -6,6 +6,7 @@ export interface DeviceInfo {
   platform: DevicePlatform;
   last_seen: number;
   is_online: boolean;
+  is_restricted?: boolean;
 }
 
 export type DevicePlatform =

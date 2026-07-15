@@ -9,7 +9,7 @@ export const useDeviceStore = defineStore("device", () => {
   const devices = ref<Map<string, DeviceInfo>>(new Map());
   const selectedDeviceId = ref<string | null>(null);
   const selfInfo = ref<SelfInfo | null>(null);
-  const sidebarTab = ref<"devices" | "snippets">("devices");
+  const sidebarTab = ref<"devices" | "snippets" | "rooms" | "debug">("devices");
 
   const onlineDevices = computed(() =>
     Array.from(devices.value.values())

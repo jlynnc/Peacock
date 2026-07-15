@@ -11,7 +11,7 @@ pub struct Database {
 
 impl Database {
     /// Current database schema version. Increment this when adding new migrations.
-    const CURRENT_DB_VERSION: i64 = 2;
+    const CURRENT_DB_VERSION: i64 = 3;
     pub fn new(data_dir: &PathBuf) -> Result<Self> {
         std::fs::create_dir_all(data_dir)?;
         let db_path = data_dir.join("peacock.db");
@@ -142,6 +142,19 @@ impl Database {
             info!("Migration 2: Add sort_order to snippets");
             conn.execute_batch(
                 "ALTER TABLE snippets ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0;"
+            )?;
+        }
+
+        // Migration 3: Rooms table for group chat
+        if current < 3 {
+            info!("Migration 3: Create rooms table");
+            conn.execute_batch(
+                "CREATE TABLE IF NOT EXISTS rooms (
+                    id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    member_ids TEXT NOT NULL,
+                    created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+                );"
             )?;
         }
 
@@ -325,6 +338,46 @@ impl Database {
              VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
             params![device_id, device_name, ip_addr, tcp_port, platform, last_seen],
         )?;
+        Ok(())
+    }
+
+    // ── Rooms ──
+
+    pub fn create_room(&self, id: &str, name: &str, member_ids: &[String]) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        let members_json = serde_json::to_string(member_ids).unwrap_or_default();
+        conn.execute(
+            "INSERT OR REPLACE INTO rooms (id, name, member_ids) VALUES (?1, ?2, ?3)",
+            params![id, name, members_json],
+        )?;
+        Ok(())
+    }
+
+    pub fn get_rooms(&self) -> Result<Vec<serde_json::Value>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT id, name, member_ids, created_at FROM rooms ORDER BY created_at DESC",
+        )?;
+        let rows = stmt
+            .query_map([], |row| {
+                let members_str: String = row.get(2)?;
+                let member_ids: Vec<String> =
+                    serde_json::from_str(&members_str).unwrap_or_default();
+                Ok(serde_json::json!({
+                    "id": row.get::<_, String>(0)?,
+                    "name": row.get::<_, String>(1)?,
+                    "member_ids": member_ids,
+                    "created_at": row.get::<_, i64>(3)?,
+                }))
+            })?
+            .filter_map(|r| r.ok())
+            .collect();
+        Ok(rows)
+    }
+
+    pub fn delete_room(&self, id: &str) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("DELETE FROM rooms WHERE id = ?1", params![id])?;
         Ok(())
     }
 }
