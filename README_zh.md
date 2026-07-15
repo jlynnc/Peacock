@@ -64,20 +64,22 @@ UDP 52000   ── 设备发现 + 消息 + 信令
 | 平台 | 状态 | 技术 |
 |------|------|------|
 | Windows | ✅ 已发布 | Tauri v2 (Rust + Vue 3) |
+| macOS | ✅ 已发布 | Tauri v2 (Rust + Vue 3) |
 | Linux | ✅ 已发布 | Tauri v2 (Rust + Vue 3) |
 | iOS | ✅ App Store | 原生 Swift / SwiftUI |
 | Android | ✅ 已发布 (APK) | 原生 Kotlin / Compose |
-| macOS | 📋 计划中 | Swift (与 iOS 共享代码) |
 
 ## 下载
 
-**[GitHub Releases](https://github.com/jlynnc/Peacock/releases/tag/v0.1.0)**
+**[最新版本](https://github.com/jlynnc/Peacock/releases/latest)**
 
 - `peacock.exe` — Windows (免安装)
-- `Peacock_0.1.0_x64-setup.exe` — Windows (安装包)
-- `Peacock_0.1.0_amd64.deb` — Linux (Debian/Ubuntu)
-- `Peacock-0.1.0-1.x86_64.rpm` — Linux (Fedora/RHEL)
-- `Peacock_0.1.0.apk` — Android
+- `Peacock_x64-setup.exe` — Windows (安装包)
+- `Peacock_aarch64.dmg` — macOS (Apple Silicon)
+- `Peacock_amd64.deb` — Linux (Debian/Ubuntu)
+- `Peacock-x86_64.rpm` — Linux (Fedora/RHEL)
+- `Peacock_amd64.AppImage` — Linux (免安装)
+- `Peacock.apk` — Android
 - iOS — 在 App Store 搜索 "Peacock"
 
 ## 项目结构

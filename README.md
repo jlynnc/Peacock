@@ -64,21 +64,23 @@ Discovery rules:
 | Platform | Status | Technology |
 |----------|--------|-----------|
 | Windows | ✅ Released | Tauri v2 (Rust + Vue 3) |
+| macOS | ✅ Released | Tauri v2 (Rust + Vue 3) |
 | Linux | ✅ Released | Tauri v2 (Rust + Vue 3) |
 | iOS | ✅ App Store | Native Swift / SwiftUI |
 | Android | ✅ Released (APK) | Native Kotlin / Compose |
-| macOS | 📋 Planned | Swift (shared with iOS) |
 
 ## Download
 
-**[GitHub Releases](https://github.com/jlynnc/Peacock/releases/tag/v0.1.0)**
+**[Latest Release](https://github.com/jlynnc/Peacock/releases/latest)**
 
 - `peacock.exe` — Windows (portable)
-- `Peacock_0.1.0_x64-setup.exe` — Windows (installer)
-- `Peacock_0.1.0_amd64.deb` — Linux (Debian/Ubuntu)
-- `Peacock-0.1.0-1.x86_64.rpm` — Linux (Fedora/RHEL)
-- `Peacock_0.1.0.apk` — Android
-- iOS — Search "Peacock" on App Store
+- `Peacock_x64-setup.exe` — Windows (installer)
+- `Peacock_aarch64.dmg` — macOS (Apple Silicon)
+- `Peacock_amd64.deb` — Linux (Debian/Ubuntu)
+- `Peacock-x86_64.rpm` — Linux (Fedora/RHEL)
+- `Peacock_amd64.AppImage` — Linux (portable)
+- `Peacock.apk` — Android
+- iOS — Search "Peacock" on the App Store
 
 ## Project Structure
 
