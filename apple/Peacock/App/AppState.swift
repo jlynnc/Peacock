@@ -71,18 +71,29 @@ final class AppState: ObservableObject {
         self.deviceId = id
         self.deviceIdBytes = NetworkUtils.uuidToBytes(id)
 
-        // Load device name
+        // Load device name.
+        // iOS 16+ returns a generic model name ("iPhone") from UIDevice.name for
+        // privacy, so every iPhone looks identical on other devices. When the name
+        // is generic, append a short suffix from the device ID so they're unique.
+        // A real custom name (older iOS / with entitlement) is kept as-is.
+        let suffix = String(id.replacingOccurrences(of: "-", with: "").suffix(4)).uppercased()
         #if os(iOS)
-        let defaultName = UIDevice.current.name
+        let genericName = UIDevice.current.model        // "iPhone" / "iPad"
+        let rawName = UIDevice.current.name
+        let uniqueName = (rawName == genericName) ? "\(rawName)-\(suffix)" : rawName
         #else
-        let defaultName = Host.current().localizedName ?? "Mac"
+        let genericName = "Mac"
+        let uniqueName = Host.current().localizedName ?? "Mac-\(suffix)"
         #endif
         let storedName = try? db.getSetting("device_name")
-        let resolvedName = storedName ?? defaultName
-        self.deviceName = resolvedName
-        if storedName == nil {
+        let resolvedName: String
+        if let stored = storedName, stored != genericName {
+            resolvedName = stored                       // real/custom name → keep
+        } else {
+            resolvedName = uniqueName                    // fresh install or bare generic → make unique
             try? db.setSetting("device_name", value: resolvedName)
         }
+        self.deviceName = resolvedName
 
         let disc = DiscoveryManager()
         self.discovery = disc
