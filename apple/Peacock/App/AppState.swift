@@ -33,6 +33,9 @@ final class AppState: ObservableObject {
     // File offers pending acceptance
     @Published var pendingFileOffers: [FileOfferInfo] = []
 
+    // Files handed over by the Share Extension, awaiting a device choice
+    @Published var pendingSharedFiles: [URL] = []
+
     // Settings
     @Published var autoAccept: Bool = false
     @Published var maxConcurrent: Int = 10
@@ -467,6 +470,32 @@ final class AppState: ObservableObject {
             status: .sent
         )
         addMessage(message, for: deviceId)
+    }
+
+    // MARK: - Share Extension inbox
+
+    func loadSharedInbox() {
+        pendingSharedFiles = ShareInbox.pendingFiles()
+    }
+
+    /// Send everything the Share Extension dropped off to the chosen device.
+    func sendSharedFiles(to deviceId: String) {
+        for src in pendingSharedFiles {
+            // Copy out of the App Group container first — the transfer reads the file
+            // asynchronously, so it must outlive clearing the inbox.
+            let dest = FileManager.default.temporaryDirectory
+                .appendingPathComponent(src.lastPathComponent)
+            try? FileManager.default.removeItem(at: dest)
+            guard (try? FileManager.default.copyItem(at: src, to: dest)) != nil else { continue }
+            sendFile(to: deviceId, url: dest)
+        }
+        ShareInbox.clear()
+        pendingSharedFiles = []
+    }
+
+    func discardSharedFiles() {
+        ShareInbox.clear()
+        pendingSharedFiles = []
     }
 
     func acceptTransfer(_ transferId: String) {
