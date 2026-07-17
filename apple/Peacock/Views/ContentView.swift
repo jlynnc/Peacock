@@ -42,5 +42,12 @@ struct ContentView: View {
             .tag(Tab.settings)
         }
         .tint(Color.peacockTeal)
+        .sheet(isPresented: Binding(
+            get: { !appState.pendingSharedFiles.isEmpty },
+            set: { if !$0 { appState.discardSharedFiles() } }
+        )) {
+            SharedFilesPicker()
+                .environmentObject(appState)
+        }
     }
 }

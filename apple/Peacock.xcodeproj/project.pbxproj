@@ -12,7 +12,9 @@
 		1661B437AAF84FFEF50D0F0F /* UDPService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06894EC7E08FEBCA25A47CF8 /* UDPService.swift */; };
 		187E9661080DC03ED9C3A79E /* NetworkUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 668598E9B18994417A046921 /* NetworkUtils.swift */; };
 		1A9678A45D5F765DC552547B /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = A0A5D6AFD3758591D88D2645 /* GRDB */; };
+		1BF7000510BBB7CB7E1D2C28 /* ShareInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A8035F87B738E3FCDD83D3E /* ShareInbox.swift */; };
 		1DDB8261FF972349AC73A68E /* PacketBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77691663B72CCA976D9F6895 /* PacketBuilder.swift */; };
+		2AC50E9340653E7525E1557D /* ShareInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A8035F87B738E3FCDD83D3E /* ShareInbox.swift */; };
 		2AC646F9D6E462D6078AE87E /* ChatBubbleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9107A2B1885B865F1B3EE7C /* ChatBubbleView.swift */; };
 		2B133A1FC9B86685E1511266 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 363D6A8D377516D1EA540A63 /* Localization.swift */; };
 		32F6D44E8415557AC3559DB6 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = ACEC37A04C85128CBDA8E52F /* GRDB */; };
@@ -33,6 +35,7 @@
 		70EB3EC682DFC815B35CFFEF /* ChatBubbleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9107A2B1885B865F1B3EE7C /* ChatBubbleView.swift */; };
 		72CACDC0F20FAA2CA73F058F /* DeviceInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8842C5B01B92E82070AEE15B /* DeviceInfo.swift */; };
 		77DA7019E56C0BE5F3817BC3 /* PacketType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34A8A28589CB6F7374CECEE /* PacketType.swift */; };
+		80F48D5CE937679D31AC700E /* SharedFilesPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = E03ACC0B1D742280016F3A74 /* SharedFilesPicker.swift */; };
 		8470D46CD7020ECF43056577 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F63300321FE50BF1056344CB /* ChatView.swift */; };
 		8559587E45AA946D6FE4E51A /* PacketBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77691663B72CCA976D9F6895 /* PacketBuilder.swift */; };
 		87CF39AF106DC99AA7D15AD3 /* BincodeDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB6B65A29CA352570041532C /* BincodeDecoder.swift */; };
@@ -45,7 +48,9 @@
 		9714878BC3819470A2824F44 /* BincodeEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51D03F5A9FB0CCA59ED602B0 /* BincodeEncoder.swift */; };
 		975A84D5D3AC25BF44036936 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 629460C28D0C6229AD9B8A77 /* SettingsView.swift */; };
 		9AB224AF0DEBD182130CE58D /* PeacockApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD629BF5C2B18207B8AF07A9 /* PeacockApp.swift */; };
+		A48A88B208FE3D782582922D /* ShareInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A8035F87B738E3FCDD83D3E /* ShareInbox.swift */; };
 		A50C9867B59468D6FDD906D0 /* BincodeEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51D03F5A9FB0CCA59ED602B0 /* BincodeEncoder.swift */; };
+		A58A3F13387CDCCAD7464A5F /* SharedFilesPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = E03ACC0B1D742280016F3A74 /* SharedFilesPicker.swift */; };
 		A7AC23AE637316108A336BAA /* DiscoveryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E36AA793F17CD2A359625588 /* DiscoveryManager.swift */; };
 		A9D444BE1A894A8CC1EEA845 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A1D41E2395B95594D60771E /* Theme.swift */; };
 		AFB937272ABA55C620F1E1C5 /* Database.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A176B3629FC1C230EE12742 /* Database.swift */; };
@@ -55,11 +60,13 @@
 		BB9D8E830F69A7E31D9C0236 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 517516272E856DC7FCF59CE0 /* Assets.xcassets */; };
 		BF7008510EB9245FA0F8BF1F /* UDPService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06894EC7E08FEBCA25A47CF8 /* UDPService.swift */; };
 		BF7B868FF9D63421B441AE7F /* FileTransferManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A71673C4C412926549BB965C /* FileTransferManager.swift */; };
+		D40D6704307E7493120854D5 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E020908245B1547C82BCBB2C /* ShareViewController.swift */; };
 		D64A2B6D3003A09D4534874B /* ChipTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2031FEBBB29CFD0A42AC6812 /* ChipTextView.swift */; };
 		D7EB5EEE3C96AB6D240B075A /* BincodeDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB6B65A29CA352570041532C /* BincodeDecoder.swift */; };
 		DA2738EB9BD0A780592FE7AE /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 363D6A8D377516D1EA540A63 /* Localization.swift */; };
 		DED8C6385630A15B6538F42D /* DeviceInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8842C5B01B92E82070AEE15B /* DeviceInfo.swift */; };
 		E0A63DAD36794CABBBDA48D4 /* TransferTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = E386C08E27597D2BB22F77EF /* TransferTask.swift */; };
+		E2E7F40B50D0AA0C248A31BB /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 75E186E90E606A8D17FB1023 /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		E62D8F4D512282F42907786C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 517516272E856DC7FCF59CE0 /* Assets.xcassets */; };
 		EA12B394112785D2B1E68B6C /* SnippetListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3A886D7E15CE345B29F5C88 /* SnippetListView.swift */; };
 		EBA5882408AC08D7E3A9FB54 /* NetworkUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 668598E9B18994417A046921 /* NetworkUtils.swift */; };
@@ -67,10 +74,35 @@
 		F598777C98680CD91814993E /* PacketType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34A8A28589CB6F7374CECEE /* PacketType.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		8F1D9AF197223A5DB52F3FC9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5679486B2313AFB97D3D66BE /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 69F51C40E12F9A6710332231;
+			remoteInfo = ShareExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B45E8166E57F907448E37CF1 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				E2E7F40B50D0AA0C248A31BB /* ShareExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		05883D4D3695ABFDE52C3720 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		0613A836D5234C166CEBDF75 /* Snippet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Snippet.swift; sourceTree = "<group>"; };
 		06894EC7E08FEBCA25A47CF8 /* UDPService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UDPService.swift; sourceTree = "<group>"; };
+		12243F661AF6240986DA2007 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		2031FEBBB29CFD0A42AC6812 /* ChipTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChipTextView.swift; sourceTree = "<group>"; };
 		363D6A8D377516D1EA540A63 /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
 		517516272E856DC7FCF59CE0 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -78,8 +110,10 @@
 		59D8990B04A2E9EED845B810 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		629460C28D0C6229AD9B8A77 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		668598E9B18994417A046921 /* NetworkUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkUtils.swift; sourceTree = "<group>"; };
+		75E186E90E606A8D17FB1023 /* ShareExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		76E43246E23354823F9A1669 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		77691663B72CCA976D9F6895 /* PacketBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PacketBuilder.swift; sourceTree = "<group>"; };
+		7A8035F87B738E3FCDD83D3E /* ShareInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareInbox.swift; sourceTree = "<group>"; };
 		8205B48F70FBA33D5B866E0A /* DeviceListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceListView.swift; sourceTree = "<group>"; };
 		841F29D2418FF05C165F9C14 /* Payloads.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Payloads.swift; sourceTree = "<group>"; };
 		8842C5B01B92E82070AEE15B /* DeviceInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceInfo.swift; sourceTree = "<group>"; };
@@ -94,6 +128,9 @@
 		C3A886D7E15CE345B29F5C88 /* SnippetListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetListView.swift; sourceTree = "<group>"; };
 		C8932115DF64D2A68E0D54C6 /* SnippetEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetEditorView.swift; sourceTree = "<group>"; };
 		CC6E92B7B1A889CE53155BBF /* Peacock.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Peacock.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CC7E01AABB3514E152AB7E89 /* ShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ShareExtension.entitlements; sourceTree = "<group>"; };
+		E020908245B1547C82BCBB2C /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
+		E03ACC0B1D742280016F3A74 /* SharedFilesPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedFilesPicker.swift; sourceTree = "<group>"; };
 		E36AA793F17CD2A359625588 /* DiscoveryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryManager.swift; sourceTree = "<group>"; };
 		E386C08E27597D2BB22F77EF /* TransferTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransferTask.swift; sourceTree = "<group>"; };
 		EA8503BD2DABBAA099A02344 /* Peacock.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Peacock.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -126,6 +163,8 @@
 			isa = PBXGroup;
 			children = (
 				9F2475239D18575385A64862 /* Peacock */,
+				9182FC65CED4C28B196DF3C0 /* Shared */,
+				D050C74DA7770B39D4363382 /* ShareExtension */,
 				D9ADFB85BFC3832291317E77 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -167,6 +206,7 @@
 			children = (
 				B9107A2B1885B865F1B3EE7C /* ChatBubbleView.swift */,
 				F63300321FE50BF1056344CB /* ChatView.swift */,
+				E03ACC0B1D742280016F3A74 /* SharedFilesPicker.swift */,
 			);
 			path = Chat;
 			sourceTree = "<group>";
@@ -200,6 +240,14 @@
 				C3A886D7E15CE345B29F5C88 /* SnippetListView.swift */,
 			);
 			path = Snippet;
+			sourceTree = "<group>";
+		};
+		9182FC65CED4C28B196DF3C0 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				7A8035F87B738E3FCDD83D3E /* ShareInbox.swift */,
+			);
+			path = Shared;
 			sourceTree = "<group>";
 		};
 		94028075BF494B4268016284 /* Views */ = {
@@ -255,11 +303,22 @@
 			path = Resources;
 			sourceTree = "<group>";
 		};
+		D050C74DA7770B39D4363382 /* ShareExtension */ = {
+			isa = PBXGroup;
+			children = (
+				12243F661AF6240986DA2007 /* Info.plist */,
+				CC7E01AABB3514E152AB7E89 /* ShareExtension.entitlements */,
+				E020908245B1547C82BCBB2C /* ShareViewController.swift */,
+			);
+			path = ShareExtension;
+			sourceTree = "<group>";
+		};
 		D9ADFB85BFC3832291317E77 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				EA8503BD2DABBAA099A02344 /* Peacock.app */,
 				CC6E92B7B1A889CE53155BBF /* Peacock.app */,
+				75E186E90E606A8D17FB1023 /* ShareExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -267,6 +326,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		69F51C40E12F9A6710332231 /* ShareExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 932A362EC5A57742A66B4DF6 /* Build configuration list for PBXNativeTarget "ShareExtension" */;
+			buildPhases = (
+				9F377EB5CDB4E3B3EDE037B4 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ShareExtension;
+			packageProductDependencies = (
+			);
+			productName = ShareExtension;
+			productReference = 75E186E90E606A8D17FB1023 /* ShareExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		B326F27A22CD350A157682CB /* Peacock_macOS */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = F4401AAB8F936E95FD1E6F99 /* Build configuration list for PBXNativeTarget "Peacock_macOS" */;
@@ -294,10 +370,12 @@
 				0B5EDD31F94927488CA9C4D4 /* Sources */,
 				68DDCCCB85479F962F06CD4D /* Resources */,
 				0C36DB21B5010875F68F8341 /* Frameworks */,
+				B45E8166E57F907448E37CF1 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				EFB8BCBEC2C160711C51426D /* PBXTargetDependency */,
 			);
 			name = Peacock_iOS;
 			packageProductDependencies = (
@@ -316,6 +394,10 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
+					69F51C40E12F9A6710332231 = {
+						DevelopmentTeam = G58K5HLBG5;
+						ProvisioningStyle = Automatic;
+					};
 					B326F27A22CD350A157682CB = {
 						DevelopmentTeam = G58K5HLBG5;
 						ProvisioningStyle = Automatic;
@@ -345,6 +427,7 @@
 			targets = (
 				BC650CBF66137D0BDA534A4C /* Peacock_iOS */,
 				B326F27A22CD350A157682CB /* Peacock_macOS */,
+				69F51C40E12F9A6710332231 /* ShareExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -394,12 +477,23 @@
 				88B16A9BBC4E558F6F70B2A3 /* Payloads.swift in Sources */,
 				3A32B4FA3F29073227F37B60 /* PeacockApp.swift in Sources */,
 				975A84D5D3AC25BF44036936 /* SettingsView.swift in Sources */,
+				1BF7000510BBB7CB7E1D2C28 /* ShareInbox.swift in Sources */,
+				80F48D5CE937679D31AC700E /* SharedFilesPicker.swift in Sources */,
 				545DC5108462B3425C820089 /* Snippet.swift in Sources */,
 				3E2ABCC0F6355EB5C7922081 /* SnippetEditorView.swift in Sources */,
 				442717C32C6416F06BD43446 /* SnippetListView.swift in Sources */,
 				A9D444BE1A894A8CC1EEA845 /* Theme.swift in Sources */,
 				B8C806006120B972E3ED856A /* TransferTask.swift in Sources */,
 				BF7008510EB9245FA0F8BF1F /* UDPService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9F377EB5CDB4E3B3EDE037B4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A48A88B208FE3D782582922D /* ShareInbox.swift in Sources */,
+				D40D6704307E7493120854D5 /* ShareViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -428,6 +522,8 @@
 				48965255F192FB23D25C789E /* Payloads.swift in Sources */,
 				9AB224AF0DEBD182130CE58D /* PeacockApp.swift in Sources */,
 				0A3423E9F827358B336CC83C /* SettingsView.swift in Sources */,
+				2AC50E9340653E7525E1557D /* ShareInbox.swift in Sources */,
+				A58A3F13387CDCCAD7464A5F /* SharedFilesPicker.swift in Sources */,
 				64396859B593BC45145BF05A /* Snippet.swift in Sources */,
 				5EC3E4D201871DE46FAC53F4 /* SnippetEditorView.swift in Sources */,
 				EA12B394112785D2B1E68B6C /* SnippetListView.swift in Sources */,
@@ -438,6 +534,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		EFB8BCBEC2C160711C51426D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 69F51C40E12F9A6710332231 /* ShareExtension */;
+			targetProxy = 8F1D9AF197223A5DB52F3FC9 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		1B7A285950AA57276BAC1CDD /* Debug */ = {
@@ -487,6 +591,29 @@
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
+		};
+		3AC561FC559CA482EC9C4454 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = G58K5HLBG5;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.peacock.app.ShareExtension;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
 		};
 		51DB2873DB9CF5000845B111 /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -543,6 +670,29 @@
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
+		};
+		57CB621D960BE48CF428A8EA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = G58K5HLBG5;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.peacock.app.ShareExtension;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
 		};
 		6B3C7498CF9790EB48D47DBB /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -672,6 +822,15 @@
 			buildConfigurations = (
 				6B3C7498CF9790EB48D47DBB /* Debug */,
 				51DB2873DB9CF5000845B111 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		932A362EC5A57742A66B4DF6 /* Build configuration list for PBXNativeTarget "ShareExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				57CB621D960BE48CF428A8EA /* Debug */,
+				3AC561FC559CA482EC9C4454 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

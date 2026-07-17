@@ -33,6 +33,9 @@ final class AppState: ObservableObject {
     // File offers pending acceptance
     @Published var pendingFileOffers: [FileOfferInfo] = []
 
+    // Files handed over by the Share Extension, awaiting a device choice
+    @Published var pendingSharedFiles: [URL] = []
+
     // Settings
     @Published var autoAccept: Bool = false
     @Published var maxConcurrent: Int = 10
@@ -71,18 +74,29 @@ final class AppState: ObservableObject {
         self.deviceId = id
         self.deviceIdBytes = NetworkUtils.uuidToBytes(id)
 
-        // Load device name
+        // Load device name.
+        // iOS 16+ returns a generic model name ("iPhone") from UIDevice.name for
+        // privacy, so every iPhone looks identical on other devices. When the name
+        // is generic, append a short suffix from the device ID so they're unique.
+        // A real custom name (older iOS / with entitlement) is kept as-is.
+        let suffix = String(id.replacingOccurrences(of: "-", with: "").suffix(4)).uppercased()
         #if os(iOS)
-        let defaultName = UIDevice.current.name
+        let genericName = UIDevice.current.model        // "iPhone" / "iPad"
+        let rawName = UIDevice.current.name
+        let uniqueName = (rawName == genericName) ? "\(rawName)-\(suffix)" : rawName
         #else
-        let defaultName = Host.current().localizedName ?? "Mac"
+        let genericName = "Mac"
+        let uniqueName = Host.current().localizedName ?? "Mac-\(suffix)"
         #endif
         let storedName = try? db.getSetting("device_name")
-        let resolvedName = storedName ?? defaultName
-        self.deviceName = resolvedName
-        if storedName == nil {
+        let resolvedName: String
+        if let stored = storedName, stored != genericName {
+            resolvedName = stored                       // real/custom name → keep
+        } else {
+            resolvedName = uniqueName                    // fresh install or bare generic → make unique
             try? db.setSetting("device_name", value: resolvedName)
         }
+        self.deviceName = resolvedName
 
         let disc = DiscoveryManager()
         self.discovery = disc
@@ -456,6 +470,32 @@ final class AppState: ObservableObject {
             status: .sent
         )
         addMessage(message, for: deviceId)
+    }
+
+    // MARK: - Share Extension inbox
+
+    func loadSharedInbox() {
+        pendingSharedFiles = ShareInbox.pendingFiles()
+    }
+
+    /// Send everything the Share Extension dropped off to the chosen device.
+    func sendSharedFiles(to deviceId: String) {
+        for src in pendingSharedFiles {
+            // Copy out of the App Group container first — the transfer reads the file
+            // asynchronously, so it must outlive clearing the inbox.
+            let dest = FileManager.default.temporaryDirectory
+                .appendingPathComponent(src.lastPathComponent)
+            try? FileManager.default.removeItem(at: dest)
+            guard (try? FileManager.default.copyItem(at: src, to: dest)) != nil else { continue }
+            sendFile(to: deviceId, url: dest)
+        }
+        ShareInbox.clear()
+        pendingSharedFiles = []
+    }
+
+    func discardSharedFiles() {
+        ShareInbox.clear()
+        pendingSharedFiles = []
     }
 
     func acceptTransfer(_ transferId: String) {
